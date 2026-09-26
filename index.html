@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carambola">
+<title>Carambola — prueba de compatibilidad</title>
+<style>
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; background: #0b3d2e; color: #fff;
+         margin: 0; padding: 40px; font-size: 24px; }
+  h1 { font-size: 36px; margin-top: 0; }
+  li { margin: 16px 0; list-style: none; }
+  .ok { color: #7CFC9A; }
+  .fallo { color: #FF8A80; }
+  .nota { font-size: 16px; color: #cfe; margin-top: 40px; word-wrap: break-word; }
+</style>
+</head>
+<body>
+<h1>Prueba de compatibilidad</h1>
+<ul>
+  <li class="ok">✓ La página abrió por HTTPS</li>
+  <li id="js" class="fallo">✗ JavaScript no corrió</li>
+  <li id="guardado" class="fallo">✗ Guardado sin verificar</li>
+  <li id="pantalla">…</li>
+</ul>
+<p class="nota" id="agente"></p>
+<script>
+(function () {
+  var js = document.getElementById('js');
+  js.className = 'ok';
+  js.innerHTML = '✓ JavaScript funciona';
+
+  var guardado = document.getElementById('guardado');
+  try {
+    var visitas = parseInt(window.localStorage.getItem('prueba-visitas') || '0', 10) + 1;
+    window.localStorage.setItem('prueba-visitas', String(visitas));
+    guardado.className = 'ok';
+    guardado.innerHTML = '✓ Guardado en el iPad funciona (visita número ' + visitas + ')';
+  } catch (e) {
+    guardado.innerHTML = '✗ No se puede guardar datos. ¿Estás en navegación privada?';
+  }
+
+  var pantalla = document.getElementById('pantalla');
+  if (window.navigator.standalone) {
+    pantalla.className = 'ok';
+    pantalla.innerHTML = '✓ Abierta desde la pantalla de inicio';
+  } else {
+    pantalla.innerHTML = 'Abierta en Safari. Prueba también «Agregar a pantalla de inicio».';
+  }
+
+  document.getElementById('agente').innerHTML = navigator.userAgent;
+})();
+</script>
+</body>
+</html>
