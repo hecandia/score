@@ -48,6 +48,11 @@ async function principal() {
     await pagina.reload();
     await captura('1-inicio');
 
+    // Respaldo del arranque limpio, para restaurarlo al final.
+    await toca('Respaldo');
+    var respaldoInicial = await pagina.inputValue('#exportar');
+    await toca('‹ Inicio');
+
     await toca('Récords');
     var t = await texto();
     comprobar(/Racha de victorias\s*7\s*Francisco/.test(t), 'récords iniciales de Francisco: racha 7');
@@ -117,6 +122,24 @@ async function principal() {
     t = await texto();
     comprobar(/Ana\s*2 de 2\s*2 de 2/.test(t), 'estadísticas: Ana 2 de 2 en la semana y en total');
     await captura('6-estadisticas');
+
+    // Restaurar el respaldo inicial deja la app como recién instalada.
+    await toca('‹ Inicio');
+    await toca('Respaldo');
+    await pagina.fill('#importar', respaldoInicial);
+    await toca('Restaurar');
+    await toca('Estadísticas');
+    comprobar(/Todavía no hay partidos/.test(await texto()), 'restaurar: sin partidos');
+    await toca('‹ Inicio');
+    await toca('Récords');
+    t = await texto();
+    comprobar(/Tiro más largo\s*11\s*Francisco/.test(t) && !/Ana/.test(t), 'restaurar: récords iniciales y sin rastro de Ana');
+    await toca('‹ Inicio');
+    await toca('Jugadores');
+    comprobar(!/Ana|Beto/.test(await texto()), 'restaurar: los jugadores agregados desaparecen');
+    await pagina.reload();
+    comprobar(!/Noche en curso/.test(await texto()) && !(await pagina.locator('button', { hasText: 'Deshacer' }).count()),
+      'restaurar: sin noche en curso ni deshacer, también tras recargar');
 
     comprobar(erroresJs.length === 0, 'sin errores de JavaScript' + (erroresJs.length ? ': ' + erroresJs.join('; ') : ''));
   } finally {
