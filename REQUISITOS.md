@@ -10,10 +10,19 @@ App web para un iPad viejo.
 - Sin internet: Service Workers no existen en iOS 9 → **AppCache** (manifest).
 - Se instala con «Agregar a pantalla de inicio» (`apple-mobile-web-app-capable`), a pantalla completa.
 - Respaldo: exportar / importar los datos, porque viven sólo en el iPad.
-- Riesgo a probar **antes de construir**: que iOS 9 acepte el certificado HTTPS del hosting
-  (iOS 9 no confía en la raíz actual de Let's Encrypt).
-  Medido 2026-09-25: `*.github.io` usa Let's Encrypt (YR1 → Root YR → ISRG Root X1).
-  Plan B si el iPad lo rechaza: instalar a mano la raíz ISRG Root X1 como perfil en el iPad.
+- Hosting: GitHub Pages, https://hecandia.github.io/score/ (repo `hecandia/score`).
+- Certificado: `*.github.io` usa Let's Encrypt (YR1 → Root YR → ISRG Root X1) y iOS 9 no confía
+  en ISRG Root X1. Resuelto 2026-09-25 instalando esa raíz como perfil en el iPad
+  (`isrg-root-x1.cer`, SHA-256 verificado). Si el iPad se restaura, hay que reinstalarla.
+- `prueba.html` queda como diagnóstico: HTTPS, JavaScript, guardado y modo pantalla de inicio.
+
+## Publicar una versión
+1. `npm test` (sintaxis ES5 + reglas) y `npm run e2e` (una noche completa en Chromium).
+2. Subir el número de versión en `carambola.appcache`. **Sin eso el iPad sigue con la versión
+   vieja**: AppCache sólo baja algo nuevo si el manifest cambió.
+3. Todo archivo nuevo del sitio va también en el `CACHE:` del manifest; si uno falta o da 404,
+   iOS descarta el caché entero y la app deja de funcionar sin internet.
+4. Push a `main`. En el iPad aparece «Hay una versión nueva»; se toca para cargarla.
 
 ## Decidido
 
@@ -49,6 +58,9 @@ App web para un iPad viejo.
   jugador tienen que ser de tres bandas, sin importar en qué turno caigan.
   Ej.: turno 1 = 5 libres; turno 2 = 4 libres + tres bandas (la 10.ª) + 8 libres → 18.
 - Supuesto: cada carambola vale 1 punto, sea libre o de tres bandas.
+- Supuesto: gana el primero que llega al límite, en ese momento; sin entrada de igualación
+  para el que salió segundo. Una entrada no puede pasar del límite.
+- La modalidad y el límite se pueden cambiar entre partidos de la misma noche.
 
 ### Estadísticas
 Filtrables por modalidad y formato, igual que los récords:

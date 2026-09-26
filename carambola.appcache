@@ -1,0 +1,14 @@
+CACHE MANIFEST
+# Cambiar la versión en cada publicación: es lo que hace que el iPad baje lo nuevo.
+# v1
+
+CACHE:
+index.html
+css/app.css
+js/logica.js
+js/datos.js
+js/app.js
+icono.png
+
+NETWORK:
+*
