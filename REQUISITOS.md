@@ -12,6 +12,8 @@ App web para un iPad viejo.
 - Respaldo: exportar / importar los datos, porque viven sólo en el iPad.
 - Riesgo a probar **antes de construir**: que iOS 9 acepte el certificado HTTPS del hosting
   (iOS 9 no confía en la raíz actual de Let's Encrypt).
+  Medido 2026-09-25: `*.github.io` usa Let's Encrypt (YR1 → Root YR → ISRG Root X1).
+  Plan B si el iPad lo rechaza: instalar a mano la raíz ISRG Root X1 como perfil en el iPad.
 
 ## Decidido
 
