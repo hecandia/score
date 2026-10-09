@@ -259,16 +259,15 @@
           ' · serie mayor ' + L.serieMayor(p, j)) + '</div></div>';
   }
 
-  // En «una por una» el aviso sigue a cada carambola; en «total» sólo se sabe
-  // con qué empieza la entrada.
+  // El aviso sigue al número del marcador grande, pendiente incluido, en los
+  // dos modos: también en «total» se cuenta con +1 mientras se tira.
   function avisoRosario(p, tirador, acumulado) {
     if (p.modalidad !== 'rosario') { return ''; }
-    var enVivo = p.registro === 'unoxuno';
-    var r = L.rosario(L.puntos(p, tirador) + (enVivo ? acumulado : 0));
+    var r = L.rosario(L.puntos(p, tirador) + acumulado);
     if (r.tresBandas) {
       return '<div class="rosario tres">TRES BANDAS<span>la ' + r.numero + '.ª</span></div>';
     }
-    return '<div class="rosario">' + (enVivo ? 'Siguiente: libre' : 'La entrada empieza con libres') +
+    return '<div class="rosario">' + (acumulado > 0 || p.registro === 'unoxuno' ? 'Siguiente: libre' : 'La entrada empieza con libres') +
       ' · ' + plural(r.libresAntes, 'libre', 'libres') + ' antes de la de tres bandas</div>';
   }
 

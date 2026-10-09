@@ -144,10 +144,17 @@ async function principal() {
     comprobar(/Entrada de Ana/.test(t) && /11 carambolas/.test(t), 'deshacer vuelve a la entrada con su acumulado');
     await toca('confirma');
 
+    // El segundo partido, en «total por entrada»: el aviso también sigue a lo pendiente.
+    await toca('Cambiar modalidad o límite');
+    await toca('Total por entrada');
+    await toca('Guardar');
     await toca('Empezar el siguiente partido');
     await toca('Francisco');
     await toca('confirma');           // Francisco: 0
-    for (i = 0; i < 20; i++) { await toca('+1'); }
+    for (i = 0; i < 9; i++) { await toca('+1'); }
+    comprobar(/TRES BANDAS\s*la 10\.ª/.test(await pagina.locator('.panel', { hasText: 'Ana' }).innerText()),
+      'total por entrada: con 9 pendientes también avisa la de tres bandas');
+    for (i = 0; i < 11; i++) { await toca('+1'); }
     await toca('confirma');           // Ana: 20
     t = await texto();
     comprobar(/Siguiente: Francisco \(amarilla\) contra Beto \(blanca\) · descansa Ana/.test(t),

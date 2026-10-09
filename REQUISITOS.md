@@ -47,10 +47,10 @@ App web para un iPad viejo.
 - **Total al terminar el tiro:** se anota cuántas hizo en la entrada.
 - **Una por una:** el jugador contrario va sumando +1 en un acumulado temporal; al terminar la
   entrada, el que tiró confirma (o corrige) y recién ahí se asienta.
-- En rosario, el modo una por una avisa en vivo cuándo toca la de tres bandas; en modo total
-  la app muestra antes de la entrada cuántas libres faltan, pero no puede validar.
 - Mientras se anota, el marcador grande del tirador ya incluye lo de la entrada, marcado como
-  pendiente («+N por confirmar») hasta que confirma. El aviso de tres bandas va en ese marcador.
+  pendiente («+N por confirmar») hasta que confirma.
+- En rosario, el aviso de tres bandas va en ese marcador y sigue al número pendiente en los
+  dos modos (Héctor, 2026-10-09: en «total» también se cuenta con +1 mientras se tira).
 - Además de +1 / −1 hay teclado numérico: lo tecleado es el total de la entrada (el primer
   dígito reemplaza lo anotado; los siguientes se agregan). No deja pasar del límite.
 
