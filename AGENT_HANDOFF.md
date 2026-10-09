@@ -4,14 +4,15 @@ Sólo estado. El porqué de las decisiones vive en el brain y en `docs/decisione
 
 ## Dónde estamos (2026-10-09)
 - v1 publicada en https://hecandia.github.io/score/ (GitHub Pages, repo `hecandia/score`, rama `main`).
-- Primera noche real jugada. Sus ajustes están construidos como v2 (ver ROADMAP §v2):
-  total pendiente en el marcador, aviso grande de tres bandas, teclado numérico, bolas, y la
-  pantalla del partido para duplicarla en una TV por HDMI. `npm test` 14/14, `npm run e2e` 29/29.
-- Manifest en v2. **v2 sin publicar.**
+- Ajustes de la primera noche publicados (manifest v3, ver ROADMAP §v2). Héctor los probó en
+  el iPad: «quedó muy bien». `npm test` 14/14, `npm run e2e` 30/30.
+
+## A medias
+- Nada en código.
 
 ## Siguiente paso
-1. Publicar v2 (push a `main`) y que Héctor la pruebe en la mesa con la TV.
-2. Preguntarle lo que está en ❓ del roadmap, de a una.
+1. Que Héctor pruebe el iPad conectado a la TV con el adaptador de 30 pines a HDMI.
+2. Preguntarle lo que está en ❓ del roadmap, de a una (bola en partido de dos, entrada de igualación).
 
 ## Para operar
 - Funcionalidades y su estado: [ROADMAP.md](ROADMAP.md). Reglas de juego y plataforma: [REQUISITOS.md](REQUISITOS.md).

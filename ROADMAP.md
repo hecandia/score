@@ -23,12 +23,12 @@ Estados: ✅ publicado · 🔎 publicado, sin validar en la mesa · ⏳ pendient
 | Ícono y pantalla completa desde la pantalla de inicio | ✅ |
 | Funciona sin internet (AppCache) | 🔎 no comprobado en modo avión |
 
-## v2 — ajustes tras la primera noche real (2026-10-09), sin publicar
+## v2 — ajustes tras la primera noche real (publicada 2026-10-09, manifest v3)
 
 | Funcionalidad | Estado |
 |---|---|
 | El marcador grande del tirador muestra el total con lo de la entrada, en azul y «+N por confirmar» hasta que confirma | 🔎 |
-| Aviso «TRES BANDAS» grande dentro del marcador del tirador (rosario) | 🔎 |
+| Aviso «TRES BANDAS» grande dentro del marcador del tirador (rosario); sigue a lo pendiente en los dos modos | 🔎 |
 | Teclado numérico para anotar el total de la entrada (el primer dígito reemplaza, los siguientes se agregan; no pasa del límite) | 🔎 |
 | Bola blanca / amarilla por jugador: se elige al empezar la noche; el que entra juega con la bola del que sale | 🔎 |
 | Pantalla del partido para duplicarla en una TV de 19″ por HDMI: marcador arriba, controles abajo, sin scroll | 🔎 falta probar con el adaptador «Apple 30-pin Digital AV Adapter» |
@@ -38,7 +38,7 @@ Estados: ✅ publicado · 🔎 publicado, sin validar en la mesa · ⏳ pendient
 
 | Tema | Estado | Qué lo destraba |
 |---|---|---|
-| Publicar v2 y probarla en la mesa con la TV | ⏳ | Push a `main` (manifest ya en v2) |
+| Probar el iPad en la TV con el adaptador | ⏳ | Que Héctor consiga el «Apple 30-pin Digital AV Adapter» |
 | Bola en partido de dos: hoy cada uno conserva la suya toda la noche | ❓ | Que Héctor confirme |
 | Entrada de igualación: hoy gana el primero que llega al límite, sin igualar | ❓ | Que Héctor confirme cómo juegan |
 | Rotación con 4 jugadores | ⏳ pospuesta por Héctor | Regla de la fila: cuando salen a la vez el que cumplió dos seguidos y el perdedor, ¿quién queda primero? |
