@@ -78,5 +78,4 @@ Filtrables por modalidad y formato, igual que los récords:
   no cuentan para la ronda de tres.
 
 ## Pendiente
-- **Rotación con 4 jugadores** (pospuesta). Caso sin resolver: cuando en el mismo partido
-  sale el que cumplió dos seguidos y el que perdió, ¿quién queda primero en la fila?
+Vive en [ROADMAP.md](ROADMAP.md) (rotación con 4 jugadores, entrada de igualación, etc.).
