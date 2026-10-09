@@ -4,15 +4,13 @@ Sólo estado. El porqué de las decisiones vive en el brain y en `docs/decisione
 
 ## Dónde estamos (2026-10-09)
 - v1 publicada en https://hecandia.github.io/score/ (GitHub Pages, repo `hecandia/score`, rama `main`).
-- Instalada en el iPad de Héctor (iPad 3, iOS 9.3.6) desde la pantalla de inicio; la simuló y
-  «se siente muy bien». Falta la primera noche real de rondas.
-- Árbol limpio. `npm test` 12/12, `npm run e2e` 21/21 en el último commit.
-
-## A medias
-- Nada en código. Esperando retroalimentación de la primera noche.
+- Primera noche real jugada. Sus ajustes están construidos como v2 (ver ROADMAP §v2):
+  total pendiente en el marcador, aviso grande de tres bandas, teclado numérico, bolas, y la
+  pantalla del partido para duplicarla en una TV por HDMI. `npm test` 14/14, `npm run e2e` 29/29.
+- Manifest en v2. **v2 sin publicar.**
 
 ## Siguiente paso
-1. Recoger la retroalimentación de Héctor y priorizarla en [ROADMAP.md](ROADMAP.md).
+1. Publicar v2 (push a `main`) y que Héctor la pruebe en la mesa con la TV.
 2. Preguntarle lo que está en ❓ del roadmap, de a una.
 
 ## Para operar

@@ -73,6 +73,8 @@ async function principal() {
     await pagina.locator('.opciones button', { hasText: 'Ana' }).last().click();
     await pagina.locator('.opciones button', { hasText: 'Beto' }).last().click();
     await pagina.locator('.opciones button', { hasText: 'Francisco' }).last().click();
+    comprobar(await pagina.locator('button', { hasText: 'Empezar' }).isDisabled(), 'no se puede empezar sin elegir la bola blanca');
+    await pagina.locator('[data-accion="elegirBlanca"]', { hasText: 'Ana' }).click();
     await captura('3-nueva-noche');
     await toca('Empezar');
 
@@ -80,24 +82,58 @@ async function principal() {
     comprobar(/Descansa: Francisco/.test(t), 'con el orden Ana, Beto, Francisco descansa Francisco');
     await toca('Ana');
 
+    function bolaDe(nombre) {
+      return pagina.locator('.panel', { hasText: nombre }).locator('.bola').getAttribute('class');
+    }
+    comprobar(/blanca/.test(await bolaDe('Ana')) && /amarilla/.test(await bolaDe('Beto')),
+      'bolas: Ana con la blanca que se eligió, Beto con la amarilla');
+
     for (var i = 0; i < 9; i++) { await toca('+1'); }
-    comprobar(/La 10\.ª tiene que ser de TRES BANDAS/.test(await texto()), 'rosario: tras 9 libres avisa la de tres bandas');
+    var ana = pagina.locator('.panel', { hasText: 'Ana' });
+    comprobar(await ana.locator('.puntos.pendiente').innerText() === '9' && /\+9 por confirmar/.test(await ana.innerText()),
+      'el marcador grande muestra el total pendiente, marcado hasta confirmar');
+    comprobar(/TRES BANDAS\s*la 10\.ª/.test(await ana.innerText()), 'rosario: tras 9 libres avisa la de tres bandas en el marcador');
     await captura('4-partido-tres-bandas');
+
+    // Cabe sin scroll en el iPad a pantalla completa (768 menos la barra de estado).
+    await pagina.setViewportSize({ width: 1024, height: 748 });
+    var alturas = await pagina.evaluate(function () {
+      function alto(sel) { return Math.round(document.querySelector(sel).getBoundingClientRect().height); }
+      return { barra: alto('.barra'), marcador: alto('.marcador'), entrada: alto('.entrada'),
+        fondo: Math.round(document.querySelector('.entrada').getBoundingClientRect().bottom) };
+    });
+    comprobar(alturas.fondo <= 748, 'la pantalla del partido cabe en 748 px: ' + JSON.stringify(alturas));
+    await pagina.setViewportSize({ width: 1024, height: 768 });
+
     await toca('confirma');
+    comprobar(await ana.locator('.puntos.pendiente').count() === 0, 'al confirmar, el número deja de estar pendiente');
     await toca('confirma');  // Beto: sin carambola
     t = await texto();
     comprobar(/Entrada de Ana/.test(t), 'los turnos alternan');
-    comprobar(/La 10\.ª tiene que ser de TRES BANDAS/.test(t), 'rosario: la cuenta sigue entre entradas');
+    comprobar(/TRES BANDAS\s*la 10\.ª/.test(t), 'rosario: la cuenta sigue entre entradas');
 
-    for (i = 0; i < 11; i++) { await toca('+1'); }
+    // Teclado: tras +1 el primer dígito reemplaza; los siguientes se agregan.
+    function tecla(d) { return pagina.locator('[data-accion="digito"][data-valor="' + d + '"]'); }
+    await toca('+1');
+    await toca('+1');
+    await tecla(1).click();
+    comprobar(/confirma: 1 carambola$/.test(await pagina.locator('button', { hasText: 'confirma' }).innerText()),
+      'teclado: tras contar 2 con +1, el dígito 1 reemplaza (no anota 21)');
+    comprobar(await tecla(2).isDisabled() && !(await tecla(1).isDisabled()),
+      'teclado: 12 pasaría de las 11 que faltan y se desactiva; 11 no');
+    await tecla(1).click();
     comprobar(await pagina.locator('button.mas').isDisabled() && /11 carambolas/.test(await texto()),
-      'una entrada no pasa del límite: con 11 (lo que faltaba) el +1 se desactiva');
+      'teclado: 1 y 1 anotan 11, lo que faltaba; el +1 se desactiva');
+    await pagina.locator('[data-accion="borrar"]').click();
+    await tecla(1).click();
+    comprobar(/11 carambolas/.test(await texto()), 'teclado: borrar quita el último dígito');
     await toca('confirma');
 
     t = await texto();
     comprobar(/¡Gana Ana!/.test(t), 'Ana gana al llegar a 20');
     comprobar(/Ana iguala el tiro más largo: 11/.test(t), 'aviso: iguala el récord de tiro de Francisco');
-    comprobar(/Siguiente: Ana contra Francisco · descansa Beto/.test(t), 'rotación: la ganadora juega contra el que esperaba');
+    comprobar(/Siguiente: Ana \(blanca\) contra Francisco \(amarilla\) · descansa Beto/.test(t),
+      'rotación: la ganadora sigue con su bola y Francisco entra con la de Beto');
     await captura('5-fin-partido');
 
     await pagina.reload();
@@ -114,7 +150,8 @@ async function principal() {
     for (i = 0; i < 20; i++) { await toca('+1'); }
     await toca('confirma');           // Ana: 20
     t = await texto();
-    comprobar(/Siguiente: Francisco contra Beto · descansa Ana/.test(t), 'tras dos seguidos Ana descansa, gane o pierda');
+    comprobar(/Siguiente: Francisco \(amarilla\) contra Beto \(blanca\) · descansa Ana/.test(t),
+      'tras dos seguidos Ana descansa, gane o pierda, y Beto entra con su blanca');
 
     respuestasPrompt.push('');
     await toca('Terminar la noche');

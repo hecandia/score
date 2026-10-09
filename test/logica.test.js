@@ -105,6 +105,43 @@ test('partido: turnos alternados, ganador al llegar al límite y tope por entrad
   assert.strictEqual(L.serieMayor(p, 'B'), 13);
 });
 
+test('teclado: el primer dígito reemplaza, los siguientes se agregan, nunca pasa del máximo', function () {
+  assert.strictEqual(L.teclear(3, 5, false, 20), 5, 'tras contar con +1, teclear empieza de nuevo');
+  assert.strictEqual(L.teclear(1, 2, true, 20), 12);
+  assert.strictEqual(L.teclear(1, 2, true, 11), null, '12 pasa de lo que falta');
+  assert.strictEqual(L.teclear(0, 0, false, 11), 0);
+});
+
+test('bolas: el que sigue conserva la suya y el que entra toma la del que salió', function () {
+  // El ejemplo de Héctor: H blanca contra F amarilla; pierde F, entra O.
+  var p1 = { jugadores: ['H', 'F'], blanca: 'H' };
+  assert.strictEqual(L.bolaBlanca(null, ['H', 'F'], 'H'), 'H', 'primer partido: la elegida al empezar');
+  assert.strictEqual(L.bolaBlanca(p1, ['H', 'O'], null), 'H', 'H sigue con la blanca; O toma la amarilla de F');
+  var p2 = { jugadores: ['H', 'O'], blanca: 'H' };
+  assert.strictEqual(L.bolaBlanca(p2, ['O', 'F'], null), 'F', 'sale H: F entra con la blanca');
+  assert.strictEqual(L.bolaBlanca(p1, ['H', 'F'], null), 'H', 'partido de dos: cada uno conserva la suya');
+  assert.strictEqual(L.bolaBlanca({ jugadores: ['H', 'F'] }, ['H', 'O'], null), null, 'noche sin bolas');
+
+  // En una ronda entera, cada partido tiene una blanca y una amarilla.
+  var noche = { jugadores: ['A', 'B', 'C'], ordenBanda: ['A', 'B', 'C'] };
+  for (var mascara = 0; mascara < 64; mascara++) {
+    var hechos = [];
+    for (var i = 0; i < 6; i++) {
+      var sig = L.siguienteRonda3(noche, hechos);
+      var previo = hechos[hechos.length - 1] || null;
+      var blanca = L.bolaBlanca(previo, sig.jugadores, 'B');
+      assert.ok(sig.jugadores.indexOf(blanca) >= 0, 'máscara ' + mascara + ', partido ' + i);
+      if (previo) {
+        var sigue = sig.jugadores.filter(function (j) { return previo.jugadores.indexOf(j) >= 0; })[0];
+        assert.strictEqual(blanca === sigue, previo.blanca === sigue, 'el que sigue conserva su bola');
+      }
+      var p = partido(sig.jugadores[0], sig.jugadores[1], sig.jugadores[(mascara >> i) & 1]);
+      p.blanca = blanca;
+      hechos.push(p);
+    }
+  }
+});
+
 var INICIALES = [
   { modalidad: 'rosario', formato: 'ronda3', tipo: 'racha', jugador: 'F', valor: 7 },
   { modalidad: 'rosario', formato: 'ronda3', tipo: 'tiro', jugador: 'F', valor: 11 },

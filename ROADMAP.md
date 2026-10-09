@@ -23,11 +23,23 @@ Estados: ✅ publicado · 🔎 publicado, sin validar en la mesa · ⏳ pendient
 | Ícono y pantalla completa desde la pantalla de inicio | ✅ |
 | Funciona sin internet (AppCache) | 🔎 no comprobado en modo avión |
 
+## v2 — ajustes tras la primera noche real (2026-10-09), sin publicar
+
+| Funcionalidad | Estado |
+|---|---|
+| El marcador grande del tirador muestra el total con lo de la entrada, en azul y «+N por confirmar» hasta que confirma | 🔎 |
+| Aviso «TRES BANDAS» grande dentro del marcador del tirador (rosario) | 🔎 |
+| Teclado numérico para anotar el total de la entrada (el primer dígito reemplaza, los siguientes se agregan; no pasa del límite) | 🔎 |
+| Bola blanca / amarilla por jugador: se elige al empezar la noche; el que entra juega con la bola del que sale | 🔎 |
+| Pantalla del partido para duplicarla en una TV de 19″ por HDMI: marcador arriba, controles abajo, sin scroll | 🔎 falta probar con el adaptador «Apple 30-pin Digital AV Adapter» |
+| Rachas por jugador | ✅ sin cambio: están en Récords; Héctor las había buscado en Estadísticas |
+
 ## Siguiente
 
 | Tema | Estado | Qué lo destraba |
 |---|---|---|
-| Ajustes tras la primera noche real de rondas | ⏳ | La retroalimentación de Héctor |
+| Publicar v2 y probarla en la mesa con la TV | ⏳ | Push a `main` (manifest ya en v2) |
+| Bola en partido de dos: hoy cada uno conserva la suya toda la noche | ❓ | Que Héctor confirme |
 | Entrada de igualación: hoy gana el primero que llega al límite, sin igualar | ❓ | Que Héctor confirme cómo juegan |
 | Rotación con 4 jugadores | ⏳ pospuesta por Héctor | Regla de la fila: cuando salen a la vez el que cumplió dos seguidos y el perdedor, ¿quién queda primero? |
 | Comprobar el modo sin internet en el iPad (modo avión, abrir desde el ícono) | ⏳ | Una prueba de Héctor |

@@ -17,7 +17,8 @@
     'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   var estado = D.cargar();
-  var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' } };
+  // `tecleando`: el siguiente dígito del teclado se agrega en vez de reemplazar.
+  var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' }, tecleando: false };
 
   // --- Utilidades ------------------------------------------------------------
 
@@ -42,6 +43,18 @@
   }
 
   function plural(n, uno, varios) { return n + ' ' + (n === 1 ? uno : varios); }
+
+  function bola(color) { return '<span class="bola ' + color + '"></span>'; }
+
+  // 'blanca', 'amarilla' o null en partidos anteriores a las bolas.
+  function colorDe(p, j) {
+    return p.blanca ? (p.blanca === j ? 'blanca' : 'amarilla') : null;
+  }
+
+  function conBola(p, j) {
+    var color = colorDe(p, j);
+    return nombre(j) + (color ? ' (' + color + ')' : '');
+  }
 
   function boton(accion, texto, opciones) {
     opciones = opciones || {};
@@ -92,10 +105,12 @@
     var sig = noche.formato === 'ronda3'
       ? L.siguienteRonda3(noche, partidosDe(noche))
       : { jugadores: noche.jugadores.slice(), descansa: null };
+    var hechos = partidosDe(noche).filter(function (x) { return !!x.ganador; });
     var p = {
       id: D.id('p'), nocheId: noche.id, fecha: Date.now(), formato: noche.formato,
       modalidad: noche.config.modalidad, limite: noche.config.limite, registro: noche.config.registro,
-      jugadores: sig.jugadores, descansa: sig.descansa, salida: null, entradas: [], ganador: null
+      jugadores: sig.jugadores, descansa: sig.descansa, salida: null, entradas: [], ganador: null,
+      blanca: L.bolaBlanca(hechos[hechos.length - 1] || null, sig.jugadores, noche.blanca)
     };
     estado.partidos.push(p);
     estado.actual = { nocheId: noche.id, partidoId: p.id, acumulado: 0 };
@@ -158,6 +173,12 @@
         : 'Al terminar cada entrada se anota el total de carambolas.') + '</p>';
   }
 
+  // Los que abren la noche: los dos primeros del tiro a la banda, o la pareja.
+  function parejaInicial(b) {
+    if (b.formato === 'ronda3') { return b.orden.length >= 2 ? b.orden.slice(0, 2) : null; }
+    return b.seleccion.length === 2 ? b.seleccion : null;
+  }
+
   vistas.nuevaNoche = function () {
     var b = ui.borrador;
     var cupo = b.formato === 'ronda3' ? 3 : 2;
@@ -182,9 +203,21 @@
         }).join('') + boton('reiniciarOrden', 'Reiniciar orden', { clase: 'opcion secundario' }) + '</div>';
     }
 
+    var pareja = parejaInicial(b);
+    if (pareja) {
+      html += '<h2>¿Quién tira con la bola blanca?</h2><div class="opciones">' +
+        pareja.map(function (id) {
+          var color = b.blanca ? (b.blanca === id ? 'blanca' : 'amarilla') : null;
+          return boton('elegirBlanca', (color ? bola(color) : '') + nombre(id),
+            { valor: id, clase: 'opcion' + (b.blanca === id ? ' elegida' : '') });
+        }).join('') + '</div>' +
+        (b.formato === 'ronda3' ? '<p class="ayuda">Después, el que entra juega con la bola del que sale.</p>' : '');
+    }
+
     html += formularioConfig(b.config);
 
-    var listo = b.seleccion.length === cupo && (b.formato === 'dos' || b.orden.length === 3);
+    var listo = b.seleccion.length === cupo && (b.formato === 'dos' || b.orden.length === 3) &&
+      !!pareja && pareja.indexOf(b.blanca) >= 0;
     html += '<div class="pie">' + boton('empezarNoche', 'Empezar', { clase: 'grande primario', desactivado: !listo }) + '</div>';
     return html;
   };
@@ -197,32 +230,57 @@
       '<div class="pie">' + boton('guardarConfig', 'Guardar', { clase: 'grande primario' }) + '</div>';
   };
 
+  // «Deshacer» va en la barra: en la pantalla del partido cada renglón de
+  // altura es del marcador, que se lee desde la mesa en la TV.
   function encabezado(p) {
     return '<div class="barra">' + boton('ir', '‹ Menú', { valor: 'inicio' }) +
       '<h1>' + MODALIDADES[p.modalidad] + ' a ' + p.limite + '</h1>' +
-      (p.descansa ? '<span class="descansa">Descansa: ' + nombre(p.descansa) + '</span>' : '') + '</div>';
+      (p.descansa ? '<span class="descansa">Descansa: ' + nombre(p.descansa) + '</span>' : '') +
+      (D.puedeDeshacer() ? boton('deshacer', '↶ Deshacer', { clase: 'secundario' }) : '') + '</div>';
   }
 
-  function panel(p, j, activo) {
+  // Mientras se anota, el número grande del tirador ya incluye lo de la
+  // entrada, marcado como pendiente hasta que confirme.
+  function panel(p, j, tirador, acumulado) {
+    var activo = j === tirador;
+    var pendiente = activo && acumulado > 0;
     var entradas = L.entradasDe(p, j);
     var puntos = L.puntos(p, j);
+    var color = colorDe(p, j);
     return '<div class="panel' + (activo ? ' activo' : '') + '">' +
-      '<div class="nombre">' + nombre(j) + '</div>' +
-      '<div class="puntos">' + puntos + '</div>' +
-      '<div class="detalle">' + plural(entradas, 'entrada', 'entradas') +
-      ' · promedio ' + (entradas ? (puntos / entradas).toFixed(2) : '0.00') +
-      ' · serie mayor ' + L.serieMayor(p, j) + '</div></div>';
+      '<div class="nombre">' + (color ? bola(color) : '') + nombre(j) +
+      (activo ? '<span class="tira">TIRA</span>' : '') + '</div>' +
+      '<div class="puntos' + (pendiente ? ' pendiente' : '') + '">' + (puntos + (pendiente ? acumulado : 0)) + '</div>' +
+      '<div class="estado">' + (activo ? avisoRosario(p, j, acumulado) : '') + '</div>' +
+      '<div class="detalle">' + (pendiente
+        ? '<span class="por-confirmar">+' + acumulado + ' por confirmar</span>'
+        : plural(entradas, 'entrada', 'entradas') +
+          ' · promedio ' + (entradas ? (puntos / entradas).toFixed(2) : '0.00') +
+          ' · serie mayor ' + L.serieMayor(p, j)) + '</div></div>';
   }
 
+  // En «una por una» el aviso sigue a cada carambola; en «total» sólo se sabe
+  // con qué empieza la entrada.
   function avisoRosario(p, tirador, acumulado) {
     if (p.modalidad !== 'rosario') { return ''; }
     var enVivo = p.registro === 'unoxuno';
     var r = L.rosario(L.puntos(p, tirador) + (enVivo ? acumulado : 0));
     if (r.tresBandas) {
-      return '<div class="rosario tres">La ' + r.numero + '.ª tiene que ser de TRES BANDAS</div>';
+      return '<div class="rosario tres">TRES BANDAS<span>la ' + r.numero + '.ª</span></div>';
     }
-    return '<div class="rosario">' + (enVivo ? 'Siguiente: libre' : 'Esta entrada empieza con libres') +
+    return '<div class="rosario">' + (enVivo ? 'Siguiente: libre' : 'La entrada empieza con libres') +
       ' · ' + plural(r.libresAntes, 'libre', 'libres') + ' antes de la de tres bandas</div>';
+  }
+
+  function teclado(acumulado, maximo) {
+    function tecla(d, clase) {
+      return boton('digito', String(d), { valor: d, clase: clase || '',
+        desactivado: L.teclear(acumulado, d, ui.tecleando, maximo) === null });
+    }
+    var html = '';
+    for (var d = 1; d <= 9; d++) { html += tecla(d); }
+    return '<div class="teclado">' + html + tecla(0, 'cero') +
+      boton('borrar', '⌫', { desactivado: acumulado === 0 }) + '</div>';
   }
 
   vistas.partido = function () {
@@ -230,31 +288,33 @@
     var html = encabezado(p);
     if (!p.salida) {
       return html + '<h2 class="centro">¿Quién sale?</h2><div class="salida">' +
-        p.jugadores.map(function (j) { return boton('salida', nombre(j), { valor: j, clase: 'grande' }); }).join('') +
-        '</div>' + pieDeshacer();
+        p.jugadores.map(function (j) {
+          var color = colorDe(p, j);
+          return boton('salida', (color ? bola(color) : '') + nombre(j), { valor: j, clase: 'grande' });
+        }).join('') + '</div>';
     }
     var tirador = L.tirador(p);
     var contrario = L.otro(p, tirador);
     var acumulado = estado.actual.acumulado;
     var maximo = L.maximoEntrada(p, tirador);
 
-    html += '<div class="marcador">' + panel(p, p.jugadores[0], tirador === p.jugadores[0]) +
-      panel(p, p.jugadores[1], tirador === p.jugadores[1]) + '</div>';
+    html += '<div class="marcador">' + panel(p, p.jugadores[0], tirador, acumulado) +
+      panel(p, p.jugadores[1], tirador, acumulado) + '</div>';
 
-    html += '<div class="entrada"><h2>Entrada de ' + nombre(tirador) + '</h2>' +
-      avisoRosario(p, tirador, acumulado) +
-      '<p class="ayuda">' + (p.registro === 'unoxuno'
+    html += '<div class="entrada"><p class="quien">Entrada de <b>' + nombre(tirador) + '</b> · ' +
+      (p.registro === 'unoxuno'
         ? nombre(contrario) + ' suma cada carambola; ' + nombre(tirador) + ' confirma al terminar.'
-        : 'Al terminar el tiro, anota el total de la entrada.') + '</p>' +
-      '<div class="contador">' +
+        : 'al terminar el tiro, anota el total de la entrada.') + '</p>' +
+      '<div class="controles"><div class="izquierda"><div class="contador">' +
       boton('restar', '−1', { clase: 'menos', desactivado: acumulado === 0 }) +
       '<span class="acumulado">' + acumulado + '</span>' +
       boton('sumar', '+1', { clase: 'mas', desactivado: acumulado >= maximo }) + '</div>' +
       boton('confirmar', acumulado === 0
         ? nombre(tirador) + ' confirma: sin carambola'
         : nombre(tirador) + ' confirma: ' + plural(acumulado, 'carambola', 'carambolas'),
-        { clase: 'grande primario' }) + '</div>';
-    return html + pieDeshacer();
+        { clase: 'grande primario' }) + '</div>' +
+      teclado(acumulado, maximo) + '</div></div>';
+    return html;
   };
 
   var TEXTO_RECORD = { racha: 'victorias seguidas', negro: 'derrotas seguidas', tiro: 'carambolas en una entrada' };
@@ -285,8 +345,9 @@
     html += '<div class="pie">';
     if (noche.formato === 'ronda3') {
       var sig = L.siguienteRonda3(noche, partidosDe(noche));
-      html += '<p class="centro siguiente">Siguiente: ' + nombre(sig.jugadores[0]) + ' contra ' +
-        nombre(sig.jugadores[1]) + ' · descansa ' + nombre(sig.descansa) + '</p>' +
+      var proximo = { jugadores: sig.jugadores, blanca: L.bolaBlanca(p, sig.jugadores, null) };
+      html += '<p class="centro siguiente">Siguiente: ' + conBola(proximo, sig.jugadores[0]) + ' contra ' +
+        conBola(proximo, sig.jugadores[1]) + ' · descansa ' + nombre(sig.descansa) + '</p>' +
         boton('siguientePartido', 'Empezar el siguiente partido', { clase: 'grande primario' });
     } else {
       html += boton('siguientePartido', 'Otro partido', { clase: 'grande primario' });
@@ -294,14 +355,8 @@
     html += '<div class="opciones centro">' +
       boton('configurar', 'Cambiar modalidad o límite', { clase: 'opcion' }) +
       boton('terminarNoche', 'Terminar la noche', { clase: 'opcion' }) + '</div></div>';
-    return html + pieDeshacer();
+    return html;
   };
-
-  function pieDeshacer() {
-    return D.puedeDeshacer()
-      ? '<div class="deshacer">' + boton('deshacer', '↶ Deshacer lo último', { clase: 'secundario' }) + '</div>'
-      : '';
-  }
 
   vistas.records = function () {
     var tablas = L.records(terminados(), estado.recordsIniciales);
@@ -405,7 +460,7 @@
 
   acciones.nuevaNoche = function (formato) {
     if (nocheActual() && !raiz.confirm('Hay una noche en curso. ¿Terminarla y empezar otra?')) { return; }
-    ui.borrador = { formato: formato, seleccion: [], orden: [], config: ultimaConfig() };
+    ui.borrador = { formato: formato, seleccion: [], orden: [], blanca: null, config: ultimaConfig() };
     ui.vista = 'nuevaNoche';
   };
 
@@ -419,6 +474,7 @@
       b.seleccion.push(id);
     }
     b.orden = [];
+    b.blanca = null;
   };
 
   acciones.agregarJugador = function () {
@@ -453,7 +509,9 @@
     if (orden.indexOf(id) < 0) { orden.push(id); }
   };
 
-  acciones.reiniciarOrden = function () { ui.borrador.orden = []; };
+  acciones.reiniciarOrden = function () { ui.borrador.orden = []; ui.borrador.blanca = null; };
+
+  acciones.elegirBlanca = function (id) { ui.borrador.blanca = id; };
 
   acciones.modalidad = function (valor) { ui.borrador.config.modalidad = valor; };
   acciones.registro = function (valor) { ui.borrador.config.registro = valor; };
@@ -469,7 +527,8 @@
     if (nocheActual()) { cerrarNoche(); }
     var noche = {
       id: D.id('n'), fecha: Date.now(), formato: b.formato, jugadores: b.seleccion.slice(),
-      ordenBanda: b.formato === 'ronda3' ? b.orden.slice() : null, config: b.config, cerrada: false
+      ordenBanda: b.formato === 'ronda3' ? b.orden.slice() : null, blanca: b.blanca,
+      config: b.config, cerrada: false
     };
     estado.noches.push(noche);
     crearPartido(noche);
@@ -495,6 +554,21 @@
       estado.actual.acumulado--;
       guardar(true);
     }
+  };
+
+  acciones.digito = function (valor) {
+    var p = partidoActual();
+    var n = L.teclear(estado.actual.acumulado, parseInt(valor, 10), ui.tecleando, L.maximoEntrada(p, L.tirador(p)));
+    if (n === null) { return; }
+    estado.actual.acumulado = n;
+    ui.tecleando = true;
+    guardar(true);
+  };
+
+  acciones.borrar = function () {
+    estado.actual.acumulado = Math.floor(estado.actual.acumulado / 10);
+    ui.tecleando = true;
+    guardar(true);
   };
 
   acciones.confirmar = function () {
@@ -579,7 +653,11 @@
   doc.addEventListener('click', function (ev) {
     var el = destinoAccion(ev.target);
     if (!el || el.disabled) { return; }
-    if (acciones[el.getAttribute('data-accion')](el.getAttribute('data-valor')) !== false) { dibujar(); }
+    var accion = el.getAttribute('data-accion');
+    // Cualquier otra acción (+1, −1, confirmar, deshacer…) cierra el tecleo:
+    // el siguiente dígito vuelve a empezar el número.
+    if (accion !== 'digito' && accion !== 'borrar') { ui.tecleando = false; }
+    if (acciones[accion](el.getAttribute('data-valor')) !== false) { dibujar(); }
   }, false);
 
   // Versión nueva descargada por AppCache: se aplica al tocar el aviso.

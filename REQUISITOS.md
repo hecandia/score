@@ -49,6 +49,22 @@ App web para un iPad viejo.
   entrada, el que tiró confirma (o corrige) y recién ahí se asienta.
 - En rosario, el modo una por una avisa en vivo cuándo toca la de tres bandas; en modo total
   la app muestra antes de la entrada cuántas libres faltan, pero no puede validar.
+- Mientras se anota, el marcador grande del tirador ya incluye lo de la entrada, marcado como
+  pendiente («+N por confirmar») hasta que confirma. El aviso de tres bandas va en ese marcador.
+- Además de +1 / −1 hay teclado numérico: lo tecleado es el total de la entrada (el primer
+  dígito reemplaza lo anotado; los siguientes se agregan). No deja pasar del límite.
+
+### Bolas
+- Cada jugador tira con una bola, blanca o amarilla. Al empezar la noche se elige quién de la
+  primera pareja lleva la blanca.
+- Ronda de tres: el que sigue en la mesa conserva su bola y el que entra toma la del que salió.
+- Partido de dos (supuesto): cada uno conserva su bola toda la noche.
+
+### Pantalla externa
+- El marcador se ve en una TV de 19″ duplicando la pantalla del iPad por HDMI (adaptador «Apple
+  30-pin Digital AV Adapter»). iOS sólo duplica para una app web: no hay contenido distinto en
+  la TV. Por eso la pantalla del partido pone el marcador arriba y cabe sin scroll en 1024×748
+  (`npm run e2e` lo comprueba).
 
 ### Configuración del partido
 - Límite de carambolas configurable (usuales: 20 o 50).

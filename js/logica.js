@@ -51,6 +51,23 @@
     return { numero: total + 1, tresBandas: resto === 9, libresAntes: 9 - resto };
   };
 
+  // Teclado numérico: el primer dígito reemplaza lo anotado y los siguientes
+  // se agregan a la derecha. Devuelve null si el número pasaría del máximo.
+  L.teclear = function (actual, digito, continuar, maximo) {
+    var n = continuar ? actual * 10 + digito : digito;
+    return n <= maximo ? n : null;
+  };
+
+  // Bolas: el que sigue en la mesa conserva la suya y el que entra toma la del
+  // que salió. Devuelve quién tira con la blanca; `inicial` vale para el primer
+  // partido de la noche. Null si no se sabe (noches anteriores a las bolas).
+  L.bolaBlanca = function (anterior, jugadores, inicial) {
+    if (!anterior) { return inicial || null; }
+    if (!anterior.blanca) { return null; }
+    if (jugadores.indexOf(anterior.blanca) >= 0) { return anterior.blanca; }
+    return jugadores.filter(function (j) { return anterior.jugadores.indexOf(j) < 0; })[0] || null;
+  };
+
   // Asienta la entrada del tirador y declara ganador si alcanzó el límite.
   L.anotar = function (partido, carambolas) {
     var jugador = L.tirador(partido);
