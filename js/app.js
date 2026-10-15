@@ -18,7 +18,16 @@
 
   var estado = D.cargar();
   // `tecleando`: el siguiente dígito del teclado se agrega en vez de reemplazar.
-  var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' }, tecleando: false };
+  // `conTV`: la app nativa avisa si hay una pantalla externa; en Safari nunca la hay.
+  // `remotos`: cuántos iPhones están conectados como control remoto.
+  var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' }, tecleando: false,
+    conTV: false, remotos: 0 };
+
+  // Canal hacia la app nativa del iPad mini; no existe en Safari.
+  function nativo(canal) {
+    var m = raiz.webkit && raiz.webkit.messageHandlers;
+    return m && m[canal] ? m[canal] : null;
+  }
 
   // --- Utilidades ------------------------------------------------------------
 
@@ -154,6 +163,7 @@
       boton('ir', 'Estadísticas', { valor: 'estadisticas', clase: 'grande' }) +
       boton('ir', 'Jugadores', { valor: 'jugadores' }) +
       boton('ir', 'Respaldo', { valor: 'respaldo' }) +
+      (nativo('controlRemoto') ? boton('controlRemoto', 'Control desde el iPhone') : '') +
       '</div>';
     return html;
   };
@@ -282,25 +292,24 @@
       boton('borrar', '⌫', { desactivado: acumulado === 0 }) + '</div>';
   }
 
-  vistas.partido = function () {
-    var p = partidoActual();
-    var html = encabezado(p);
-    if (!p.salida) {
-      return html + '<h2 class="centro">¿Quién sale?</h2><div class="salida">' +
-        p.jugadores.map(function (j) {
-          var color = colorDe(p, j);
-          return boton('salida', (color ? bola(color) : '') + nombre(j), { valor: j, clase: 'grande' });
-        }).join('') + '</div>';
-    }
+  // Las piezas del partido las comparten el iPad y el control remoto del iPhone.
+  function quienSale(p) {
+    return '<h2 class="centro">¿Quién sale?</h2><div class="salida">' +
+      p.jugadores.map(function (j) {
+        var color = colorDe(p, j);
+        return boton('salida', (color ? bola(color) : '') + nombre(j), { valor: j, clase: 'grande' });
+      }).join('') + '</div>';
+  }
+
+  function juego(p) {
     var tirador = L.tirador(p);
     var contrario = L.otro(p, tirador);
     var acumulado = estado.actual.acumulado;
     var maximo = L.maximoEntrada(p, tirador);
 
-    html += '<div class="marcador">' + panel(p, p.jugadores[0], tirador, acumulado) +
-      panel(p, p.jugadores[1], tirador, acumulado) + '</div>';
-
-    html += '<div class="entrada"><p class="quien">Entrada de <b>' + nombre(tirador) + '</b> · ' +
+    return '<div class="marcador">' + panel(p, p.jugadores[0], tirador, acumulado) +
+      panel(p, p.jugadores[1], tirador, acumulado) + '</div>' +
+      '<div class="entrada"><p class="quien">Entrada de <b>' + nombre(tirador) + '</b> · ' +
       (p.registro === 'unoxuno'
         ? nombre(contrario) + ' suma cada carambola; ' + nombre(tirador) + ' confirma al terminar.'
         : 'al terminar el tiro, anota el total de la entrada.') + '</p>' +
@@ -313,10 +322,82 @@
         : nombre(tirador) + ' confirma: ' + plural(acumulado, 'carambola', 'carambolas'),
         { clase: 'grande primario' }) + '</div>' +
       teclado(acumulado, maximo) + '</div></div>';
-    return html;
+  }
+
+  vistas.partido = function () {
+    var p = partidoActual();
+    return encabezado(p) + (p.salida ? juego(p) : quienSale(p));
   };
 
-  var TEXTO_RECORD = { racha: 'victorias seguidas', negro: 'derrotas seguidas', tiro: 'carambolas en una entrada' };
+  // --- Tablero de la TV ----------------------------------------------------------
+
+  // Lo que ve la mesa en la pantalla externa. Sigue al partido en curso aunque
+  // en el iPad se esté mirando otra pantalla (récords, estadísticas).
+  function tablero() {
+    var p = partidoActual();
+    if (!p) { return '<div class="tv-espera">Carambola</div>'; }
+    var html = '<div class="tv-titulo">' + MODALIDADES[p.modalidad] + ' a ' + p.limite +
+      (p.descansa ? ' · descansa ' + nombre(p.descansa) : '') + '</div>';
+    if (p.ganador) {
+      var perdedor = L.otro(p, p.ganador);
+      return html + '<div class="ganador">¡Gana ' + nombre(p.ganador) + '!</div>' +
+        '<p class="centro resultado">' + L.puntos(p, p.ganador) + ' a ' + L.puntos(p, perdedor) + '</p>' +
+        (p.avisos || []).map(function (a) {
+          return '<div class="aviso ' + a.tipo + '">' + nombre(a.jugador) + ' ' +
+            (a.rompe ? 'rompe' : 'iguala') + ' el ' + NOMBRE_RECORD[a.tipo] + ': ' +
+            a.valor + ' ' + TEXTO_RECORD[a.tipo] + '</div>';
+        }).join('');
+    }
+    if (!p.salida) {
+      return html + '<div class="tv-salida">' + p.jugadores.map(function (j) {
+        var color = colorDe(p, j);
+        return '<div>' + (color ? bola(color) : '') + nombre(j) + '</div>';
+      }).join('<span>contra</span>') + '</div>';
+    }
+    var tirador = L.tirador(p);
+    var acumulado = estado.actual.acumulado;
+    return html + '<div class="marcador">' + panel(p, p.jugadores[0], tirador, acumulado) +
+      panel(p, p.jugadores[1], tirador, acumulado) + '</div>';
+  }
+
+  // --- Control remoto del iPhone ---------------------------------------------------
+
+  // Desde el iPhone sólo se anota el partido. Preparar la noche, los jugadores y
+  // el respaldo piden escribir o confirmar, y eso se hace en el iPad.
+  var REMOTAS = { salida: true, sumar: true, restar: true, digito: true, borrar: true,
+    confirmar: true, deshacer: true, siguientePartido: true };
+
+  // El iPhone puede mandar un toque de una pantalla que ya cambió (otro tocó el
+  // iPad en el medio): sólo se aplica si sigue teniendo sentido.
+  function remotaValida(accion, valor) {
+    var p = partidoActual();
+    if (accion === 'deshacer') { return D.puedeDeshacer(); }
+    if (!p) { return false; }
+    if (accion === 'salida') { return !p.salida && p.jugadores.indexOf(valor) >= 0; }
+    if (accion === 'siguientePartido') { return !!p.ganador; }
+    if (accion === 'digito' && !/^[0-9]$/.test(valor)) { return false; }
+    return !!p.salida && !p.ganador;
+  }
+
+  function remoto() {
+    var p = partidoActual();
+    if (!p) {
+      return '<div class="remoto-espera"><h1>Carambola</h1>' +
+        '<p class="ayuda">Empieza la noche en el iPad; aquí aparece el partido para anotarlo.</p></div>';
+    }
+    var html = '<div class="barra"><h1>' + MODALIDADES[p.modalidad] + ' a ' + p.limite + '</h1>' +
+      (D.puedeDeshacer() ? boton('deshacer', '↶ Deshacer', { clase: 'secundario' }) : '') + '</div>';
+    if (p.ganador) {
+      return html + '<div class="ganador">¡Gana ' + nombre(p.ganador) + '!</div>' +
+        '<p class="centro resultado">' + L.puntos(p, p.ganador) + ' a ' + L.puntos(p, L.otro(p, p.ganador)) + '</p>' +
+        '<div class="pie">' + boton('siguientePartido',
+          nocheActual().formato === 'ronda3' ? 'Empezar el siguiente partido' : 'Otro partido',
+          { clase: 'grande primario' }) + '</div>';
+    }
+    return html + (p.salida ? juego(p) : quienSale(p));
+  }
+
+  var TEXTO_RECORD ={ racha: 'victorias seguidas', negro: 'derrotas seguidas', tiro: 'carambolas en una entrada' };
   var NOMBRE_RECORD = { racha: 'racha de victorias', negro: 'récord negro', tiro: 'tiro más largo' };
 
   vistas.finPartido = function () {
@@ -612,6 +693,12 @@
     ui.vista = vistaDeJuego();
   };
 
+  // La app nativa muestra el código QR para abrir el control en el iPhone.
+  acciones.controlRemoto = function () {
+    nativo('controlRemoto').postMessage('mostrar');
+    return false;
+  };
+
   acciones.filtroModalidad = function (valor) { ui.filtro.modalidad = valor; };
   acciones.filtroFormato = function (valor) { ui.filtro.formato = valor; };
 
@@ -639,6 +726,10 @@
 
   function dibujar() {
     doc.getElementById('app').innerHTML = vistas[ui.vista]();
+    var tv = nativo('tablero');
+    if (tv && ui.conTV) { tv.postMessage(tablero()); }
+    var control = nativo('remoto');
+    if (control && ui.remotos > 0) { control.postMessage(remoto()); }
   }
 
   function destinoAccion(nodo) {
@@ -671,5 +762,27 @@
   ui.vista = vistaDeJuego();
   dibujar();
 
-  C.app = { estado: function () { return estado; } };
+  C.app = {
+    estado: function () { return estado; },
+    // La llama la app nativa al conectar o desconectar la TV, también a media
+    // entrada: con TV el marcador grande va allá y el iPad se queda con los controles.
+    pantallaExterna: function (hay) {
+      ui.conTV = !!hay;
+      doc.body.className = ui.conTV ? 'con-tv' : '';
+      dibujar();
+    },
+    // La app nativa avisa cuántos iPhones hay conectados; con cero no se les manda nada.
+    remotos: function (n) {
+      ui.remotos = n;
+      dibujar();
+    },
+    // Un toque en el iPhone. Corre la misma acción que el botón del iPad.
+    accionRemota: function (accion, valor) {
+      if (REMOTAS[accion] === true && remotaValida(accion, valor)) {
+        if (accion !== 'digito' && accion !== 'borrar') { ui.tecleando = false; }
+        acciones[accion](valor);
+      }
+      dibujar();
+    }
+  };
 })(this);

@@ -1,0 +1,42 @@
+/* Control remoto en el iPhone, vertical (unos 390 puntos de ancho). Va encima
+   de app.css: mismas piezas que el iPad, más chicas y en una columna. */
+#app { padding: 8px 10px 24px; }
+.barra h1 { font-size: 20px; margin: 0; }
+.barra button { padding: 8px 12px; font-size: 16px; }
+h2 { font-size: 20px; }
+
+.marcador { margin: 0 -4px; }
+.panel { margin: 0 4px; padding: 6px 4px; border-width: 3px; }
+.panel .nombre { font-size: 18px; line-height: 26px; }
+.panel .puntos { font-size: 60px; }
+.panel .estado { height: auto; }
+.panel .detalle { font-size: 12px; height: auto; }
+.por-confirmar { font-size: 15px; }
+.tira { font-size: 11px; margin-left: 6px; padding: 3px 5px; }
+.bola { width: 20px; height: 20px; margin-right: 6px; }
+.rosario { font-size: 12px; padding: 4px; }
+.rosario.tres { font-size: 20px; padding: 4px 2px 6px; }
+.rosario.tres span { font-size: 12px; }
+
+.entrada { padding: 8px 10px; }
+.quien { font-size: 14px; }
+.controles { display: block; }
+.izquierda { margin: 0; }
+.contador .mas { width: 150px; height: 88px; font-size: 44px; }
+.contador .menos { width: 80px; height: 70px; font-size: 26px; }
+.acumulado { font-size: 56px; min-width: 90px; }
+.grande { font-size: 20px; padding: 16px; }
+.teclado { width: auto; margin: 6px -3px 0; }
+.teclado button { width: 31%; height: 52px; }
+.teclado .cero { width: 64%; }
+
+.salida { -webkit-flex-direction: column; flex-direction: column; }
+.salida button { font-size: 26px; padding: 26px 16px; margin: 8px 0; }
+.ganador { font-size: 40px; }
+
+.remoto-espera { text-align: center; margin-top: 30vh; }
+
+#conexion {
+  display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 2; padding: 10px;
+  text-align: center; font-size: 16px; background: #c0392b; color: #fff;
+}

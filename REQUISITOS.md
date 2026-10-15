@@ -66,6 +66,15 @@ App web para un iPad viejo.
   la TV. Por eso la pantalla del partido pone el marcador arriba y cabe sin scroll en 1024×748
   (`npm run e2e` lo comprueba).
 
+### App nativa (iPad mini 4, iPadOS 15) — en construcción
+- Cáscara Swift (`ios/`) sobre la misma web; el código compartido sigue en ES5 y la web del iPad 3
+  no cambia. Sin TV opera como hoy; con TV (adaptador Lightning a HDMI) el marcador va a la TV.
+- Control remoto desde el navegador de un teléfono por la red local, con QR y código de acceso.
+- Instalación: Xcode 27 no se conecta a iOS 15; va un `.ipa` firmado con el UDID registrado
+  (membresía pagada) e instalado desde el Finder. No actualizar Xcode sin revisar que su SDK siga
+  aceptando iOS 15.0.
+- Detalle y alternativas: [docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control-remoto.md](docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control-remoto.md).
+
 ### Configuración del partido
 - Límite de carambolas configurable (usuales: 20 o 50).
 - Modalidades: **tres bandas** y **rosario** (9 carambolas libres + 1 de tres bandas).

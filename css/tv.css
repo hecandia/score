@@ -1,0 +1,34 @@
+/* Tablero de la pantalla externa (sólo app nativa, iOS 15+): se lee desde la
+   mesa. Va encima de app.css y escala con la pantalla, sea cual sea la TV. */
+html, body { height: 100%; overflow: hidden; }
+#app { max-width: none; height: 100%; padding: 3vh 3vw; }
+
+.tv-espera {
+  height: 100%; display: flex; align-items: center; justify-content: center;
+  font-size: 14vh; font-weight: 700; color: #cfe8d8;
+}
+.tv-titulo { text-align: center; font-size: 5vh; color: #b9d3c3; margin-bottom: 2vh; }
+
+.marcador { margin: 0 -1vw; }
+.panel { margin: 0 1vw; padding: 2vh 1vw; border-width: 0.6vh; border-radius: 3vh; }
+.panel .nombre { font-size: 8vh; line-height: 11vh; }
+.panel .puntos { font-size: 40vh; }
+.panel .estado { height: 13vh; margin-top: 1vh; }
+.panel .detalle { font-size: 3.6vh; height: auto; }
+.por-confirmar { font-size: 4.5vh; }
+.tira { font-size: 4vh; padding: 0.8vh 1.6vh; border-radius: 1vh; margin-left: 2vh; }
+.bola { width: 7vh; height: 7vh; margin-right: 2vh; }
+.rosario { font-size: 4vh; padding: 1.5vh; border-radius: 2vh; }
+.rosario.tres { font-size: 8vh; padding: 1vh 1vh 1.5vh; }
+.rosario.tres span { font-size: 3.5vh; }
+
+.tv-salida {
+  display: flex; align-items: center; justify-content: center; height: 75%;
+  font-size: 10vh; font-weight: 600;
+}
+.tv-salida span { font-size: 5vh; color: #b9d3c3; margin: 0 5vw; }
+.tv-salida .bola { width: 9vh; height: 9vh; }
+
+.ganador { font-size: 16vh; margin-top: 6vh; }
+.resultado { font-size: 8vh; margin: 2vh 0 4vh; }
+.aviso { font-size: 5vh; padding: 2vh; border-radius: 2vh; margin: 2vh 10vw; }

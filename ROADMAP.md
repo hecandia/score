@@ -34,6 +34,17 @@ Estados: ✅ publicado · 🔎 publicado, sin validar en la mesa · ⏳ pendient
 | Pantalla del partido para duplicarla en una TV de 19″ por HDMI: marcador arriba, controles abajo, sin scroll | 🔎 falta probar con el adaptador «Apple 30-pin Digital AV Adapter» |
 | Rachas por jugador | ✅ sin cambio: están en Récords; Héctor las había buscado en Estadísticas |
 
+## v3 — app nativa para el iPad mini 4 (en construcción, sin publicar)
+
+Decisiones en [docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control-remoto.md](docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control-remoto.md). La web del iPad 3 no cambia.
+
+| Funcionalidad | Estado |
+|---|---|
+| Cáscara nativa (`ios/`) con la misma web; datos en un archivo de la app | ⏳ probada en el simulador; falta instalarla en el mini 4 (`.ipa` por el Finder, con la membresía) |
+| TV opcional: sin TV opera como hoy; con TV el marcador va a la TV y el iPad queda con controles | ⏳ probada en Chromium; el simulador no entrega la TV, falta en el mini 4 con el adaptador Lightning a HDMI |
+| Control remoto desde el navegador del teléfono (iPhone o Android), con QR y código de acceso | ⏳ probado contra la app en el simulador; falta en el mini 4 y con un teléfono real |
+| Pasar el historial del iPad 3 al mini 4 con el respaldo | ⏳ |
+
 ## Siguiente
 
 | Tema | Estado | Qué lo destraba |

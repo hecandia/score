@@ -12,6 +12,10 @@
   var MAX_DESHACER = 40;
   var contador = 0;
 
+  // En la app nativa del iPad mini los datos van a un archivo de la app (lo
+  // inyecta ella antes de cargar la página); en Safari, a localStorage.
+  function almacen() { return raiz.almacenNativo || raiz.localStorage; }
+
   D.id = function (prefijo) {
     contador++;
     return prefijo + '-' + Date.now().toString(36) + contador.toString(36);
@@ -35,11 +39,11 @@
   };
 
   function leer(clave) {
-    try { return JSON.parse(raiz.localStorage.getItem(clave)); } catch (e) { return null; }
+    try { return JSON.parse(almacen().getItem(clave)); } catch (e) { return null; }
   }
 
   function escribir(clave, valor) {
-    raiz.localStorage.setItem(clave, JSON.stringify(valor));
+    almacen().setItem(clave, JSON.stringify(valor));
   }
 
   D.valido = function (estado) {

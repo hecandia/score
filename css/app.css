@@ -104,6 +104,14 @@ textarea { width: 100%; font-size: 14px; margin: 8px 0; }
 .aviso.racha, .aviso.tiro { background: #f2c14e; color: #2b2100; }
 .aviso.negro { background: #111; color: #f4f1e8; border: 2px solid #666; }
 
+/* App nativa con TV conectada: el marcador grande está en la TV y en el iPad
+   queda uno compacto, para que quien anota vea el tanteo sin levantar la vista. */
+.con-tv .panel .nombre { font-size: 26px; line-height: 34px; }
+.con-tv .panel .puntos { font-size: 64px; }
+.con-tv .panel .estado { height: auto; }
+.con-tv .rosario.tres { font-size: 26px; }
+.con-tv .bola { width: 28px; height: 28px; }
+
 /* Récords y estadísticas */
 .rejilla { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -6px; }
 .rejilla .tarjeta { width: 47%; -webkit-flex: 1 1 47%; flex: 1 1 47%; margin: 6px; }

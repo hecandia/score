@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Carambola · TV</title>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/tv.css">
+</head>
+<!-- Pantalla externa de la app nativa: sólo muestra. El iPad le manda el
+     tablero ya armado cada vez que redibuja (Carambola.app, función tablero). -->
+<body>
+<div id="app"><div class="tv-espera">Carambola</div></div>
+<script>
+function mostrar(html) { document.getElementById('app').innerHTML = html; }
+</script>
+</body>
+</html>
