@@ -519,9 +519,10 @@
       'si se borran los datos de Safari, con ella se recupera todo.</p>' +
       '<a class="boton grande primario" href="mailto:?subject=' + encodeURIComponent('Respaldo carambola ' + fechaLarga(Date.now())) +
       '&body=' + encodeURIComponent(datos) + '">Enviar copia por correo</a>' +
-      '<p class="ayuda">Si el correo sale cortado, selecciona el texto, cópialo y pégalo en una nota o un correo:</p>' +
+      '<p class="ayuda">Si el correo sale cortado, copia el texto y pégalo en una nota o un correo. ' +
+      'Si no se copia solo, queda seleccionado: toca «Copiar».</p>' +
       '<textarea id="exportar" rows="4" readonly>' + esc(datos) + '</textarea>' +
-      boton('seleccionarRespaldo', 'Seleccionar el texto') +
+      boton('seleccionarRespaldo', 'Copiar el texto') +
       '<h2>Restaurar una copia</h2>' +
       '<p class="ayuda">Pega el texto completo de un respaldo. Reemplaza todo lo que hay en el iPad.</p>' +
       '<textarea id="importar" rows="6"></textarea>' +
@@ -702,12 +703,28 @@
   acciones.filtroModalidad = function (valor) { ui.filtro.modalidad = valor; };
   acciones.filtroFormato = function (valor) { ui.filtro.formato = valor; };
 
-  // iOS 9 no respeta select() en un textarea; hace falta el rango explícito.
+  // iOS no muestra una selección hecha por código en un campo readonly, y
+  // tampoco respeta select(): se quita readonly mientras se selecciona, con
+  // el rango del documento y el del campo, y se restituye para que no salga
+  // el teclado. Copiar directo funciona desde iOS 10; en iOS 9 queda el texto
+  // seleccionado y basta tocar «Copiar».
   // Devuelve false para no redibujar y perder la selección.
   acciones.seleccionarRespaldo = function () {
     var campo = doc.getElementById('exportar');
+    var rango = doc.createRange();
+    var seleccion = raiz.getSelection();
+    var copiado = false;
+    campo.readOnly = false;
+    campo.contentEditable = true;
+    rango.selectNodeContents(campo);
+    seleccion.removeAllRanges();
+    seleccion.addRange(rango);
     campo.focus();
     campo.setSelectionRange(0, campo.value.length);
+    campo.contentEditable = false;
+    campo.readOnly = true;
+    try { copiado = doc.execCommand('copy'); } catch (e) { copiado = false; }
+    if (copiado) { raiz.alert('Respaldo copiado. Pégalo en una nota o un correo.'); }
     return false;
   };
 

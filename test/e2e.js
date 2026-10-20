@@ -51,6 +51,15 @@ async function principal() {
     // Respaldo del arranque limpio, para restaurarlo al final.
     await toca('Respaldo');
     var respaldoInicial = await pagina.inputValue('#exportar');
+    await toca('Copiar el texto');
+    var seleccion = await pagina.evaluate(function () {
+      var campo = document.getElementById('exportar');
+      return { inicio: campo.selectionStart, fin: campo.selectionEnd, largo: campo.value.length,
+        soloLectura: campo.readOnly, editable: campo.isContentEditable };
+    });
+    comprobar(seleccion.inicio === 0 && seleccion.fin === seleccion.largo && seleccion.largo > 0,
+      'respaldo: «Copiar el texto» selecciona el texto completo');
+    comprobar(seleccion.soloLectura && !seleccion.editable, 'respaldo: el campo sigue de sólo lectura');
     await toca('‹ Inicio');
 
     comprobar(await pagina.locator('button', { hasText: 'Control desde el iPhone' }).count() === 0,
