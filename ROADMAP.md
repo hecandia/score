@@ -40,10 +40,10 @@ Decisiones en [docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control
 
 | Funcionalidad | Estado |
 |---|---|
-| Cáscara nativa (`ios/`) con la misma web; datos en un archivo de la app | ⏳ probada en el simulador; falta instalarla en el mini 4 (`.ipa` por el Finder, con la membresía) |
+| Cáscara nativa (`ios/`) con la misma web; datos en un archivo de la app | 🔎 instalada en el mini 4 el 2026-10-29 (`.ipa` ad hoc por Apple Configurator: el Finder falla sin mensaje); ícono desde la compilación 2. Perfil vence 2027-10-29 |
 | TV opcional: sin TV opera como hoy; con TV el marcador va a la TV y el iPad queda con controles | ⏳ probada en Chromium; el simulador no entrega la TV, falta en el mini 4 con el adaptador Lightning a HDMI |
 | Control remoto desde el navegador del teléfono (iPhone o Android), con QR y código de acceso | ⏳ probado contra la app en el simulador; falta en el mini 4 y con un teléfono real |
-| Pasar el historial del iPad 3 al mini 4 con el respaldo | ⏳ |
+| Pasar el historial a la app nativa: respaldo desde el ícono de la web en el mini 4 (ahí se jugó estas semanas; guarda aparte de Safari) y restaurar en la app | ⏳ falta que Héctor confirme que la app muestra sus partidos |
 
 ## v4 — cara a cara y la TV como pantalla de transmisión (pedido y aprobado 2026-10-29; hecho, sin publicar)
 
