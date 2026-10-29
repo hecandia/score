@@ -160,6 +160,7 @@ async function principal() {
     await toca('Total por entrada');
     await toca('Guardar');
     await toca('Empezar el siguiente partido');
+    comprobar(/Primer partido entre Ana y Francisco/.test(await texto()), 'quién sale: muestra el cara a cara del par');
     await toca('Francisco');
     await toca('confirma');           // Francisco: 0
     for (i = 0; i < 9; i++) { await toca('+1'); }
@@ -170,12 +171,23 @@ async function principal() {
     t = await texto();
     comprobar(/Siguiente: Francisco \(amarilla\) contra Beto \(blanca\) · descansa Ana/.test(t),
       'tras dos seguidos Ana descansa, gane o pierda, y Beto entra con su blanca');
+    comprobar(/Francisco iguala el récord de perder con menos carambolas: 0 de 20/.test(t),
+      'aviso: Francisco pierde en cero e iguala a Beto, que perdió el primero 20 a 0');
 
     respuestasPrompt.push('');
     await toca('Terminar la noche');
     await toca('Estadísticas');
     t = await texto();
     comprobar(/Ana\s*2 de 2\s*2 de 2/.test(t), 'estadísticas: Ana 2 de 2 en la semana y en total');
+    var cara = await pagina.locator('table.cara').innerText();
+    comprobar(/Ana\s*—\s*1 – 0\s*1 – 0/.test(cara) && /Beto\s*0 – 1\s*—\s*—/.test(cara),
+      'estadísticas: cara a cara, Ana 1–0 contra cada uno y Beto nunca jugó contra Francisco: ' + JSON.stringify(cara));
+    await toca('‹ Inicio');
+    await toca('Récords');
+    comprobar(/Perder con menos carambolas\s*0 de 20\s*Beto/.test(await texto()),
+      'récords: perder con menos carambolas, con el límite; en el empate se queda el primero');
+    await toca('‹ Inicio');
+    await toca('Estadísticas');
     await captura('6-estadisticas');
 
     // Restaurar el respaldo inicial deja la app como recién instalada.
@@ -258,6 +270,33 @@ async function appNativa(navegador, url) {
   await toca('+1');
   t = await tableros();
   comprobar(t.length === 2 && /puntos pendiente">4</.test(t[1]), 'cada toque en el iPad actualiza la TV');
+  comprobar(/tv-franja">Primer partido entre Ana y Beto/.test(t[1]), 'la TV lleva el cara a cara bajo el marcador');
+
+  // Desde el iPad se elige qué muestra la TV: récords, cara a cara, marcador y de vuelta a automático.
+  async function enTV(html, nombreCaptura) {
+    var tvp = await navegador.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+    await tvp.goto(url + 'tv.html');
+    await tvp.evaluate(function (h) { mostrar(h); }, html);
+    var alto = await tvp.evaluate(function () { return document.documentElement.scrollHeight; });
+    await tvp.screenshot({ path: path.join(CAPTURAS, nombreCaptura + '.png') });
+    await tvp.close();
+    return alto;
+  }
+  await toca('TV: automático');
+  var ultimo = (await tableros()).pop();
+  comprobar(/tv-records/.test(ultimo) && /Perder con menos carambolas/.test(ultimo) && !/class="marcador"/.test(ultimo),
+    'TV en récords: la tabla del partido, sin marcador');
+  comprobar(await enTV(ultimo, '9-tv-records') <= 720, 'los récords caben en la TV');
+  await toca('TV: récords');
+  ultimo = (await tableros()).pop();
+  comprobar(/duelo-cabeza/.test(ultimo) && /primer partido entre ellos/.test(ultimo), 'TV en cara a cara: la previa del par');
+  comprobar(await enTV(ultimo, '10-tv-previa') <= 720, 'la previa cabe en la TV');
+  await toca('TV: cara a cara');
+  await toca('TV: marcador');
+  ultimo = (await tableros()).pop();
+  comprobar(/puntos pendiente">4</.test(ultimo) && /TV: automático/.test(await pagina.locator('.barra').innerText()),
+    'el ciclo vuelve a automático y la TV al marcador');
+  t = await tableros();
 
   await pagina.setViewportSize({ width: 1024, height: 748 });
   var fondo = await pagina.evaluate(function () {

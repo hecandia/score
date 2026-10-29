@@ -102,7 +102,7 @@ textarea { width: 100%; font-size: 14px; margin: 8px 0; }
 .siguiente { font-size: 22px; }
 .aviso { text-align: center; font-size: 24px; font-weight: 600; padding: 14px; border-radius: 12px; margin: 10px 0; }
 .aviso.racha, .aviso.tiro { background: #f2c14e; color: #2b2100; }
-.aviso.negro { background: #111; color: #f4f1e8; border: 2px solid #666; }
+.aviso.negro, .aviso.menor { background: #111; color: #f4f1e8; border: 2px solid #666; }
 
 /* App nativa con TV conectada: el marcador grande está en la TV y en el iPad
    queda uno compacto, para que quien anota vea el tanteo sin levantar la vista. */
@@ -118,8 +118,28 @@ textarea { width: 100%; font-size: 14px; margin: 8px 0; }
 table { width: 100%; border-collapse: collapse; }
 td, th { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,.12); text-align: left; }
 th { font-size: 16px; color: #b9d3c3; font-weight: 500; }
-td.valor { font-size: 28px; font-weight: 700; text-align: center; width: 70px; }
-tr.negro td { color: #d9d9d9; }
+td.valor { font-size: 28px; font-weight: 700; text-align: center; width: 70px; white-space: nowrap; }
+tr.negro td, tr.menor td { color: #d9d9d9; }
+.cara td { text-align: center; white-space: nowrap; }
+.cara td:first-child { text-align: left; }
+.cara td.vacia { color: #5d8c76; }
+
+/* Cara a cara del partido en curso (la previa de la TV) */
+.duelo-cabeza {
+  display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+  font-size: 40px; font-weight: 600;
+}
+.duelo-cabeza span { -webkit-flex: 1; flex: 1; text-align: center; }
+.duelo-cabeza b { font-size: 72px; color: #f2c14e; white-space: nowrap; }
+.duelo-sub { text-align: center; color: #b9d3c3; margin: 4px 0 12px; }
+.duelo-tabla td { text-align: center; font-weight: 700; width: 35%; }
+.duelo-tabla th { text-align: center; }
+.punto {
+  display: inline-block; width: 18px; height: 18px; margin: 0 3px; border-radius: 50%;
+  border: 2px solid #b9d3c3; vertical-align: middle;
+}
+.punto.gano { background: #f2c14e; border-color: #f2c14e; }
+.tv-franja { text-align: center; color: #cfe8d8; }
 ol { margin: 0; padding-left: 26px; }
 li { margin: 4px 0; }
 

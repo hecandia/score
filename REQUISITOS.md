@@ -37,6 +37,10 @@ App web para un iPad viejo.
 - **Tiro más largo** (serie de carambolas en una entrada).
 - **Récord negro:** racha de derrotas consecutivas por jugador. Mismas reglas que la racha de
   victorias: persiste entre semanas, descansar no la corta, se lleva por modalidad y formato.
+- **Perder con menos carambolas** (Héctor, 2026-10-29): otra especie de récord negro, el perdedor
+  con el puntaje más bajo de un partido. Gana el número más bajo; ante un empate se queda el
+  primero. Se muestra con el límite («2 de 50»), porque las tablas no separan por límite. No
+  tiene valor inicial: cuenta desde los partidos guardados.
 - Consecuencia: el marcador se anota entrada por entrada, no sólo el resultado final.
 - Récords **aparte por modalidad** (tres bandas, rosario) **y por formato** (ronda de tres,
   partido de dos): cuatro tablas de récords.
@@ -91,7 +95,21 @@ App web para un iPad viejo.
 Filtrables por modalidad y formato, igual que los récords:
 - Partidos ganados por jugador: en la semana y en el histórico.
 - Promedio de carambolas por entrada.
+- **Cara a cara** (Héctor, 2026-10-29): por jugador, cuántos le ganó y cuántos le perdió a cada rival.
 - Historial de partidos, noche por noche.
+
+### Cara a cara del partido en curso (2026-10-29)
+Para motivar a los que juegan, el historial del par en la modalidad y el formato del partido:
+- **Previa**: ganados de cada uno, los últimos cinco, quién lleva la racha en el duelo, promedio
+  por entrada, serie mayor, **victoria más rápida** (menos entradas) y **derrota más cerrada**
+  (más carambolas al perder). No hay «partido con más carambolas»: el ganador siempre termina
+  en el límite.
+- En la TV, en automático: la previa mientras no se anota nada; el marcador con una franja
+  (cara a cara y los récords que el partido puede igualar o romper) durante el juego; y al
+  terminar, el resultado con los avisos de récord y el cara a cara ya actualizado.
+- Desde el iPad, el botón «TV: …» de la barra cambia lo que muestra la TV: automático, récords,
+  cara a cara o marcador. Cada partido nuevo vuelve a automático.
+- Sin TV, la línea del cara a cara aparece en «¿Quién sale?».
 
 ### Operación
 - Deshacer siempre disponible (revierte la última acción confirmada).

@@ -32,3 +32,25 @@ html, body { height: 100%; overflow: hidden; }
 .ganador { font-size: 16vh; margin-top: 6vh; }
 .resultado { font-size: 8vh; margin: 2vh 0 4vh; }
 .aviso { font-size: 5vh; padding: 2vh; border-radius: 2vh; margin: 2vh 10vw; }
+
+/* Una línea bajo el marcador o el cierre: el cara a cara y los récords en juego. */
+.tv-franja { font-size: 4vh; margin-top: 1.5vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.duelo-cabeza { font-size: 9vh; margin-top: 2vh; }
+.duelo-cabeza b { font-size: 18vh; }
+.duelo-sub { font-size: 3.6vh; margin: 1vh 0 3vh; }
+.duelo-tabla { width: 80%; margin: 0 auto; }
+.duelo-tabla td { font-size: 6vh; padding: 1vh; }
+.duelo-tabla th { font-size: 3.6vh; padding: 1vh; }
+.punto { width: 3.6vh; height: 3.6vh; margin: 0 0.6vh; border-width: 0.4vh; }
+
+.tv-records .tarjeta { padding: 2vh 3vw; margin: 1vh 0; }
+.tv-records h2 { font-size: 5vh; margin: 0 0 2vh; }
+.tv-records td { font-size: 5vh; padding: 1.4vh 1vw; }
+.tv-records td.valor { font-size: 8vh; width: auto; }
+.tv-records .ayuda { font-size: 3.6vh; }
+.tv-records.rejilla .tarjeta { padding: 1.5vh 2vw; }
+.tv-records.rejilla h2 { font-size: 3.4vh; margin-bottom: 1vh; }
+.tv-records.rejilla td { font-size: 2.8vh; padding: 0.6vh 0.6vw; }
+.tv-records.rejilla td.valor { font-size: 4vh; }
+.tv-records.rejilla .ayuda { font-size: 2.4vh; margin: 0.6vh 0 0; }

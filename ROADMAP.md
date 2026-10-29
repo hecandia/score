@@ -45,6 +45,22 @@ Decisiones en [docs/decisiones/2026-10-15-app-nativa-con-dos-pantallas-y-control
 | Control remoto desde el navegador del teléfono (iPhone o Android), con QR y código de acceso | ⏳ probado contra la app en el simulador; falta en el mini 4 y con un teléfono real |
 | Pasar el historial del iPad 3 al mini 4 con el respaldo | ⏳ |
 
+## v4 — cara a cara y la TV como pantalla de transmisión (pedido y aprobado 2026-10-29; hecho, sin publicar)
+
+Todo se deriva del historial que ya se guarda (jugadores, ganador, entradas por jugador, fecha):
+no cambia el formato de los datos y vale retroactivo. Cada cifra se acota a la modalidad y el
+formato del partido, como los récords. Reglas en REQUISITOS §Cara a cara.
+
+| Funcionalidad | Estado |
+|---|---|
+| Estadísticas: matriz de cara a cara (cuántos le ganó cada uno a cada otro) | ✔ hecho (`npm test`, `npm run e2e`) |
+| Récord negro nuevo: perder con menos carambolas, con aviso al igualarlo o romperlo | ✔ hecho |
+| TV · previa automática al armar el partido: historial del par, últimos 5, promedio y serie mayor en el duelo, victoria más rápida, derrota más cerrada | ✔ hecho; sólo en la app nativa |
+| TV · franja durante el partido: el cara a cara y los récords en juego (racha si gana, récord negro si pierde) | ✔ hecho |
+| TV · cierre del partido: resultado, avisos de récord y cara a cara actualizado | ✔ hecho |
+| iPad con TV: botón «TV: …» en la barra que alterna automático · récords · cara a cara · marcador | ✔ hecho |
+| iPad sin TV (y el control del teléfono): la línea del cara a cara en «¿Quién sale?» | ✔ hecho; también en la web del iPad 3 al publicar |
+
 ## Siguiente
 
 | Tema | Estado | Qué lo destraba |

@@ -20,8 +20,9 @@
   // `tecleando`: el siguiente dígito del teclado se agrega en vez de reemplazar.
   // `conTV`: la app nativa avisa si hay una pantalla externa; en Safari nunca la hay.
   // `remotos`: cuántos iPhones están conectados como control remoto.
+  // `tv`: qué muestra la TV (ver MODOS_TV).
   var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' }, tecleando: false,
-    conTV: false, remotos: 0 };
+    conTV: false, remotos: 0, tv: 'auto' };
 
   // Canal hacia la app nativa del iPad mini; no existe en Safari.
   function nativo(canal) {
@@ -246,6 +247,7 @@
     return '<div class="barra">' + boton('ir', '‹ Menú', { valor: 'inicio' }) +
       '<h1>' + MODALIDADES[p.modalidad] + ' a ' + p.limite + '</h1>' +
       (p.descansa ? '<span class="descansa">Descansa: ' + nombre(p.descansa) + '</span>' : '') +
+      (ui.conTV ? boton('modoTV', 'TV: ' + NOMBRE_MODO_TV[ui.tv] + ' ›', { clase: 'secundario' }) : '') +
       (D.puedeDeshacer() ? boton('deshacer', '↶ Deshacer', { clase: 'secundario' }) : '') + '</div>';
   }
 
@@ -292,9 +294,63 @@
       boton('borrar', '⌫', { desactivado: acumulado === 0 }) + '</div>';
   }
 
+  // --- Cara a cara del partido en curso ----------------------------------------
+
+  function filtroDe(p) { return { modalidad: p.modalidad, formato: p.formato }; }
+
+  function dueloDe(p) { return L.duelo(terminados(), p.jugadores[0], p.jugadores[1], filtroDe(p)); }
+
+  // Una línea: lo que cabe en la pantalla de «quién sale» y en la franja de la TV.
+  function lineaDuelo(p) {
+    var a = p.jugadores[0], b = p.jugadores[1];
+    var d = dueloDe(p);
+    if (!d.jugados) { return 'Primer partido entre ' + nombre(a) + ' y ' + nombre(b); }
+    return 'Cara a cara: ' + nombre(a) + ' ' + d.por[a].ganados + ' – ' + d.por[b].ganados + ' ' + nombre(b) +
+      (d.racha.valor > 1 ? ' · ' + nombre(d.racha.jugador) + ' ganó los últimos ' + d.racha.valor : '');
+  }
+
+  function recordsALaVista(p) {
+    return L.enJuego(L.records(terminados(), estado.recordsIniciales), p).map(function (x) {
+      return nombre(x.jugador) + (x.rompe ? ' rompe' : ' iguala') + ' el ' + NOMBRE_RECORD[x.tipo] +
+        ' de ' + x.record + ' si ' + (x.tipo === 'racha' ? 'gana' : 'pierde');
+    });
+  }
+
+  // La previa: el historial del par en esta modalidad y formato. Los puntos
+  // son los últimos cinco, el más reciente a la derecha; lleno es victoria.
+  function previa(p) {
+    var a = p.jugadores[0], b = p.jugadores[1];
+    var d = dueloDe(p);
+    var x = d.por;
+    var sub = MODALIDADES[p.modalidad] + ' · ' + FORMATOS[p.formato].toLowerCase();
+    var html = '<div class="duelo"><div class="duelo-cabeza"><span>' + nombre(a) + '</span><b>' +
+      x[a].ganados + ' – ' + x[b].ganados + '</b><span>' + nombre(b) + '</span></div>';
+    if (!d.jugados) {
+      return html + '<p class="duelo-sub">' + sub + ' · primer partido entre ellos</p></div>';
+    }
+    function fila(titulo, valor) {
+      return '<tr><td>' + valor(a) + '</td><th>' + titulo + '</th><td>' + valor(b) + '</td></tr>';
+    }
+    return html + '<p class="duelo-sub">' + sub + ' · ' + plural(d.jugados, 'partido', 'partidos') + ' entre ellos' +
+      (d.racha.valor > 1 ? ' · ' + nombre(d.racha.jugador) + ' ganó los últimos ' + d.racha.valor : '') + '</p>' +
+      '<table class="duelo-tabla">' +
+      fila(d.ultimos.length === 1 ? 'último' : 'últimos ' + d.ultimos.length, function (j) {
+        return d.ultimos.map(function (g) { return '<span class="punto' + (g === j ? ' gano' : '') + '"></span>'; }).join('');
+      }) +
+      fila('promedio por entrada', function (j) { return x[j].promedio.toFixed(2); }) +
+      fila('serie mayor', function (j) { return x[j].serie; }) +
+      fila('victoria más rápida', function (j) {
+        return x[j].rapida ? plural(x[j].rapida.entradas, 'entrada', 'entradas') : '—';
+      }) +
+      fila('derrota más cerrada', function (j) {
+        return x[j].cerrada ? x[j].cerrada.carambolas + ' de ' + x[j].cerrada.limite : '—';
+      }) + '</table></div>';
+  }
+
   // Las piezas del partido las comparten el iPad y el control remoto del iPhone.
   function quienSale(p) {
-    return '<h2 class="centro">¿Quién sale?</h2><div class="salida">' +
+    return '<h2 class="centro">¿Quién sale?</h2>' +
+      '<p class="centro ayuda">' + lineaDuelo(p) + '</p><div class="salida">' +
       p.jugadores.map(function (j) {
         var color = colorDe(p, j);
         return boton('salida', (color ? bola(color) : '') + nombre(j), { valor: j, clase: 'grande' });
@@ -331,22 +387,38 @@
 
   // --- Tablero de la TV ----------------------------------------------------------
 
+  // Qué muestra la TV. En automático sigue al partido como una transmisión: la
+  // previa mientras no se anota nada, el marcador durante el juego y el cierre
+  // al terminar. Los otros modos los elige quien anota, desde el iPad.
+  var MODOS_TV = ['auto', 'records', 'duelo', 'marcador'];
+  var NOMBRE_MODO_TV = { auto: 'automático', records: 'récords', duelo: 'cara a cara', marcador: 'marcador' };
+
+  function tableroRecords(p) {
+    var tablas = L.records(terminados(), estado.recordsIniciales);
+    if (p) {
+      return '<div class="tv-records">' + tarjetaRecords(tablas, p.modalidad, p.formato) + '</div>';
+    }
+    return '<div class="tv-records rejilla">' + L.TABLAS.map(function (t) {
+      return tarjetaRecords(tablas, t.modalidad, t.formato);
+    }).join('') + '</div>';
+  }
+
   // Lo que ve la mesa en la pantalla externa. Sigue al partido en curso aunque
   // en el iPad se esté mirando otra pantalla (récords, estadísticas).
   function tablero() {
     var p = partidoActual();
-    if (!p) { return '<div class="tv-espera">Carambola</div>'; }
+    var modo = ui.tv;
+    if (!p || modo === 'records') { return tableroRecords(p); }
     var html = '<div class="tv-titulo">' + MODALIDADES[p.modalidad] + ' a ' + p.limite +
       (p.descansa ? ' · descansa ' + nombre(p.descansa) : '') + '</div>';
+    var sinEmpezar = !p.ganador && !p.entradas.length && !estado.actual.acumulado;
+    if (modo === 'duelo' || (modo === 'auto' && sinEmpezar)) { return html + previa(p); }
     if (p.ganador) {
       var perdedor = L.otro(p, p.ganador);
       return html + '<div class="ganador">¡Gana ' + nombre(p.ganador) + '!</div>' +
         '<p class="centro resultado">' + L.puntos(p, p.ganador) + ' a ' + L.puntos(p, perdedor) + '</p>' +
-        (p.avisos || []).map(function (a) {
-          return '<div class="aviso ' + a.tipo + '">' + nombre(a.jugador) + ' ' +
-            (a.rompe ? 'rompe' : 'iguala') + ' el ' + NOMBRE_RECORD[a.tipo] + ': ' +
-            a.valor + ' ' + TEXTO_RECORD[a.tipo] + '</div>';
-        }).join('');
+        (p.avisos || []).map(aviso).join('') +
+        '<div class="tv-franja">' + lineaDuelo(p) + '</div>';
     }
     if (!p.salida) {
       return html + '<div class="tv-salida">' + p.jugadores.map(function (j) {
@@ -357,7 +429,8 @@
     var tirador = L.tirador(p);
     var acumulado = estado.actual.acumulado;
     return html + '<div class="marcador">' + panel(p, p.jugadores[0], tirador, acumulado) +
-      panel(p, p.jugadores[1], tirador, acumulado) + '</div>';
+      panel(p, p.jugadores[1], tirador, acumulado) + '</div>' +
+      '<div class="tv-franja">' + [lineaDuelo(p)].concat(recordsALaVista(p)).join(' · ') + '</div>';
   }
 
   // --- Control remoto del iPhone ---------------------------------------------------
@@ -397,8 +470,21 @@
     return html + (p.salida ? juego(p) : quienSale(p));
   }
 
-  var TEXTO_RECORD ={ racha: 'victorias seguidas', negro: 'derrotas seguidas', tiro: 'carambolas en una entrada' };
-  var NOMBRE_RECORD = { racha: 'racha de victorias', negro: 'récord negro', tiro: 'tiro más largo' };
+  var TEXTO_RECORD = { racha: 'victorias seguidas', negro: 'derrotas seguidas', tiro: 'carambolas en una entrada' };
+  var NOMBRE_RECORD = { racha: 'racha de victorias', negro: 'récord negro', tiro: 'tiro más largo',
+    menor: 'récord de perder con menos carambolas' };
+
+  // «2 de 50» en el récord de perder con menos carambolas; un récord inicial
+  // cargado a mano puede no traer el límite.
+  function valorRecord(tipo, r) {
+    return r.valor + (tipo === 'menor' && r.limite ? ' de ' + r.limite : '');
+  }
+
+  function aviso(a) {
+    return '<div class="aviso ' + a.tipo + '">' + nombre(a.jugador) + ' ' +
+      (a.rompe ? 'rompe' : 'iguala') + ' el ' + NOMBRE_RECORD[a.tipo] + ': ' +
+      valorRecord(a.tipo, a) + (TEXTO_RECORD[a.tipo] ? ' ' + TEXTO_RECORD[a.tipo] : '') + '</div>';
+  }
 
   vistas.finPartido = function () {
     var p = partidoActual();
@@ -408,11 +494,7 @@
       '<p class="centro resultado">' + L.puntos(p, p.ganador) + ' a ' + L.puntos(p, perdedor) +
       ' en ' + plural(Math.ceil(p.entradas.length / 2), 'entrada', 'entradas') + '</p>';
 
-    (p.avisos || []).forEach(function (a) {
-      html += '<div class="aviso ' + a.tipo + '">' + nombre(a.jugador) + ' ' +
-        (a.rompe ? 'rompe' : 'iguala') + ' el ' + NOMBRE_RECORD[a.tipo] + ': ' +
-        a.valor + ' ' + TEXTO_RECORD[a.tipo] + '</div>';
-    });
+    html += (p.avisos || []).map(aviso).join('');
 
     var tabla = L.records(terminados(), estado.recordsIniciales)[L.clave(p.modalidad, p.formato)];
     html += '<p class="centro">' + p.jugadores.map(function (j) {
@@ -438,29 +520,32 @@
     return html;
   };
 
+  // Una tabla de récords; la usan la pantalla de récords del iPad y la TV.
+  function tarjetaRecords(tablas, modalidad, formato) {
+    var r = tablas[L.clave(modalidad, formato)];
+    function fila(tipo, titulo) {
+      var x = r[tipo];
+      return '<tr class="' + tipo + '"><td>' + titulo + '</td><td class="valor">' + (x ? valorRecord(tipo, x) : '—') +
+        '</td><td>' + (x ? nombre(x.jugador) : '') + '</td></tr>';
+    }
+    var rachas = Object.keys(r.actuales).filter(function (j) {
+      return r.actuales[j].victorias || r.actuales[j].derrotas;
+    }).map(function (j) {
+      var a = r.actuales[j];
+      return nombre(j) + ': ' + (a.victorias ? a.victorias + ' ganados' : a.derrotas + ' perdidos');
+    });
+    return '<div class="tarjeta"><h2>' + MODALIDADES[modalidad] + ' · ' + FORMATOS[formato].toLowerCase() + '</h2>' +
+      '<table>' + fila('racha', 'Racha de victorias') + fila('tiro', 'Tiro más largo') +
+      fila('negro', 'Récord negro') + fila('menor', 'Perder con menos carambolas') + '</table>' +
+      (rachas.length ? '<p class="ayuda">Rachas actuales: ' + rachas.join(' · ') + '</p>' : '') + '</div>';
+  }
+
   vistas.records = function () {
     var tablas = L.records(terminados(), estado.recordsIniciales);
-    var html = '<div class="barra">' + boton('ir', '‹ Inicio', { valor: 'inicio' }) + '<h1>Récords</h1></div>';
-    html += '<div class="rejilla">';
-    L.TABLAS.forEach(function (t) {
-      var r = tablas[L.clave(t.modalidad, t.formato)];
-      function fila(tipo, titulo) {
-        var x = r[tipo];
-        return '<tr class="' + tipo + '"><td>' + titulo + '</td><td class="valor">' + (x ? x.valor : '—') +
-          '</td><td>' + (x ? nombre(x.jugador) : '') + '</td></tr>';
-      }
-      var rachas = Object.keys(r.actuales).filter(function (j) {
-        return r.actuales[j].victorias || r.actuales[j].derrotas;
-      }).map(function (j) {
-        var a = r.actuales[j];
-        return nombre(j) + ': ' + (a.victorias ? a.victorias + ' ganados' : a.derrotas + ' perdidos');
-      });
-      html += '<div class="tarjeta"><h2>' + MODALIDADES[t.modalidad] + ' · ' + FORMATOS[t.formato].toLowerCase() + '</h2>' +
-        '<table>' + fila('racha', 'Racha de victorias') + fila('tiro', 'Tiro más largo') +
-        fila('negro', 'Récord negro') + '</table>' +
-        (rachas.length ? '<p class="ayuda">Rachas actuales: ' + rachas.join(' · ') + '</p>' : '') + '</div>';
-    });
-    return html + '</div>';
+    return '<div class="barra">' + boton('ir', '‹ Inicio', { valor: 'inicio' }) + '<h1>Récords</h1></div>' +
+      '<div class="rejilla">' + L.TABLAS.map(function (t) {
+        return tarjetaRecords(tablas, t.modalidad, t.formato);
+      }).join('') + '</div>';
   };
 
   vistas.estadisticas = function () {
@@ -482,6 +567,18 @@
         return '<tr><td>' + nombre(j) + '</td><td>' + x.ganadosSemana + ' de ' + x.jugadosSemana + '</td>' +
           '<td>' + x.ganados + ' de ' + x.jugados + '</td><td>' + x.promedio.toFixed(2) + '</td>' +
           '<td>' + x.serie + '</td></tr>';
+      }).join('') + '</table>';
+
+    var m = L.caraACara(estado.partidos, f);
+    html += '<h2>Cara a cara</h2><p class="ayuda">Cada renglón: cuántos le ganó y cuántos le perdió a cada rival.</p>' +
+      '<table class="estadisticas cara"><tr><th></th>' + ids.map(function (b) {
+        return '<th>contra ' + nombre(b) + '</th>';
+      }).join('') + '</tr>' + ids.map(function (a) {
+        return '<tr><td>' + nombre(a) + '</td>' + ids.map(function (b) {
+          var ganados = (m[a] || {})[b];
+          if (a === b || ganados === undefined) { return '<td class="vacia">—</td>'; }
+          return '<td>' + ganados + ' – ' + m[b][a] + '</td>';
+        }).join('') + '</tr>';
       }).join('') + '</table>';
 
     html += '<h2>Historial</h2>';
@@ -614,6 +711,7 @@
     estado.noches.push(noche);
     crearPartido(noche);
     guardar();
+    ui.tv = 'auto';
     ui.vista = 'partido';
   };
 
@@ -664,10 +762,16 @@
     ui.vista = vistaDeJuego();
   };
 
+  // Cada partido nuevo devuelve la TV a automático, para que arranque con la previa.
   acciones.siguientePartido = function () {
     crearPartido(nocheActual());
     guardar();
+    ui.tv = 'auto';
     ui.vista = 'partido';
+  };
+
+  acciones.modoTV = function () {
+    ui.tv = MODOS_TV[(MODOS_TV.indexOf(ui.tv) + 1) % MODOS_TV.length];
   };
 
   acciones.configurar = function () {

@@ -113,22 +113,30 @@
     { modalidad: 'tresbandas', formato: 'dos' }
   ];
 
+  // `menor`: perder con menos carambolas. Es el único récord en que gana el
+  // número más bajo; se guarda con el límite del partido («2 de 50»).
+  L.MENOR_ES_MEJOR = { menor: true };
+
+  function supera(tipo, valor, actual) {
+    return L.MENOR_ES_MEJOR[tipo] ? valor < actual : valor > actual;
+  }
+
   // Ante un empate conserva al primero que lo logró.
-  function mejor(actual, candidato) {
-    return (!actual || candidato.valor > actual.valor) ? candidato : actual;
+  function mejor(tipo, actual, candidato) {
+    return (!actual || supera(tipo, candidato.valor, actual.valor)) ? candidato : actual;
   }
 
   L.records = function (partidos, iniciales) {
     var tablas = {};
     function tabla(clave) {
-      if (!tablas[clave]) { tablas[clave] = { racha: null, negro: null, tiro: null, actuales: {} }; }
+      if (!tablas[clave]) { tablas[clave] = { racha: null, negro: null, tiro: null, menor: null, actuales: {} }; }
       return tablas[clave];
     }
     L.TABLAS.forEach(function (t) { tabla(L.clave(t.modalidad, t.formato)); });
 
     (iniciales || []).forEach(function (r) {
       var t = tabla(L.clave(r.modalidad, r.formato));
-      t[r.tipo] = mejor(t[r.tipo], { valor: r.valor, jugador: r.jugador, inicial: true });
+      t[r.tipo] = mejor(r.tipo, t[r.tipo], { valor: r.valor, jugador: r.jugador, limite: r.limite, inicial: true });
     });
 
     partidos.forEach(function (p) {
@@ -139,20 +147,38 @@
         if (p.ganador === j) {
           a.victorias++;
           a.derrotas = 0;
-          t.racha = mejor(t.racha, { valor: a.victorias, jugador: j, fecha: p.fecha });
+          t.racha = mejor('racha', t.racha, { valor: a.victorias, jugador: j, fecha: p.fecha });
         } else {
           a.derrotas++;
           a.victorias = 0;
-          t.negro = mejor(t.negro, { valor: a.derrotas, jugador: j, fecha: p.fecha });
+          t.negro = mejor('negro', t.negro, { valor: a.derrotas, jugador: j, fecha: p.fecha });
+          t.menor = mejor('menor', t.menor, { valor: L.puntos(p, j), jugador: j, fecha: p.fecha, limite: p.limite });
         }
       });
       p.entradas.forEach(function (e) {
         if (e.carambolas > 0) {
-          t.tiro = mejor(t.tiro, { valor: e.carambolas, jugador: e.jugador, fecha: p.fecha });
+          t.tiro = mejor('tiro', t.tiro, { valor: e.carambolas, jugador: e.jugador, fecha: p.fecha });
         }
       });
     });
     return tablas;
+  };
+
+  // Récords que el partido por empezar puede igualar o romper, para la TV:
+  // la racha del que gane y el récord negro del que pierda.
+  L.enJuego = function (tablas, partido) {
+    var t = tablas[L.clave(partido.modalidad, partido.formato)];
+    var lista = [];
+    partido.jugadores.forEach(function (j) {
+      var a = t.actuales[j] || { victorias: 0, derrotas: 0 };
+      [['racha', a.victorias + 1], ['negro', a.derrotas + 1]].forEach(function (par) {
+        var r = t[par[0]];
+        if (r && par[1] >= r.valor) {
+          lista.push({ tipo: par[0], jugador: j, valor: par[1], record: r.valor, rompe: par[1] > r.valor });
+        }
+      });
+    });
+    return lista;
   };
 
   // Compara los récords de antes y después de un partido recién terminado.
@@ -165,14 +191,15 @@
 
     function comparar(tipo, jugador, valor) {
       var r = previo[tipo];
-      if (!r || valor < r.valor) { return; }
-      avisos.push({ tipo: tipo, jugador: jugador, valor: valor, rompe: valor > r.valor });
+      if (!r || supera(tipo, r.valor, valor)) { return; }
+      avisos.push({ tipo: tipo, jugador: jugador, valor: valor, rompe: valor !== r.valor, limite: partido.limite });
     }
 
     var ganador = partido.ganador;
     var perdedor = L.otro(partido, ganador);
     comparar('racha', ganador, actual.actuales[ganador].victorias);
     comparar('negro', perdedor, actual.actuales[perdedor].derrotas);
+    comparar('menor', perdedor, L.puntos(partido, perdedor));
     partido.jugadores.forEach(function (j) {
       var serie = L.serieMayor(partido, j);
       if (serie > 0) { comparar('tiro', j, serie); }
@@ -219,6 +246,68 @@
       s.promedio = s.entradas ? s.carambolas / s.entradas : 0;
     });
     return { porJugador: porJugador, partidos: elegidos };
+  };
+
+  // --- Cara a cara ---------------------------------------------------------
+  // Igual que los récords, cada cifra se acota a una modalidad y un formato.
+
+  function delFiltro(partidos, filtro) {
+    return partidos.filter(function (p) {
+      return p.ganador && p.modalidad === filtro.modalidad && p.formato === filtro.formato;
+    });
+  }
+
+  // matriz[a][b] = partidos que `a` le ganó a `b`.
+  L.caraACara = function (partidos, filtro) {
+    var matriz = {};
+    delFiltro(partidos, filtro).forEach(function (p) {
+      var perdedor = L.otro(p, p.ganador);
+      var fila = matriz[p.ganador] || (matriz[p.ganador] = {});
+      fila[perdedor] = (fila[perdedor] || 0) + 1;
+      var otra = matriz[perdedor] || (matriz[perdedor] = {});
+      otra[p.ganador] = otra[p.ganador] || 0;
+    });
+    return matriz;
+  };
+
+  // El historial de un par: lo que la TV muestra antes y después de su partido.
+  // No hay «partido con más carambolas»: el ganador siempre termina en el
+  // límite. Lo que distingue es ganar en pocas entradas y perder cerca.
+  L.duelo = function (partidos, a, b, filtro) {
+    var lista = delFiltro(partidos, filtro).filter(function (p) {
+      return p.jugadores.indexOf(a) >= 0 && p.jugadores.indexOf(b) >= 0;
+    });
+    var d = { jugados: lista.length, ultimos: [], racha: null, por: {} };
+    [a, b].forEach(function (j) {
+      d.por[j] = { ganados: 0, carambolas: 0, entradas: 0, promedio: 0, serie: 0, rapida: null, cerrada: null };
+    });
+    lista.forEach(function (p) {
+      var perdedor = L.otro(p, p.ganador);
+      [a, b].forEach(function (j) {
+        var x = d.por[j];
+        x.carambolas += L.puntos(p, j);
+        x.entradas += L.entradasDe(p, j);
+        x.serie = Math.max(x.serie, L.serieMayor(p, j));
+      });
+      var g = d.por[p.ganador];
+      var entradas = L.entradasDe(p, p.ganador);
+      g.ganados++;
+      if (!g.rapida || entradas < g.rapida.entradas) { g.rapida = { entradas: entradas, fecha: p.fecha }; }
+      var pd = d.por[perdedor];
+      var puntos = L.puntos(p, perdedor);
+      if (!pd.cerrada || puntos > pd.cerrada.carambolas) {
+        pd.cerrada = { carambolas: puntos, limite: p.limite, fecha: p.fecha };
+      }
+      d.racha = d.racha && d.racha.jugador === p.ganador
+        ? { jugador: p.ganador, valor: d.racha.valor + 1 }
+        : { jugador: p.ganador, valor: 1 };
+    });
+    [a, b].forEach(function (j) {
+      var x = d.por[j];
+      x.promedio = x.entradas ? x.carambolas / x.entradas : 0;
+    });
+    d.ultimos = lista.slice(-5).map(function (p) { return p.ganador; });
+    return d;
   };
 
   C.logica = L;

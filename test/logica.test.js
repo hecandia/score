@@ -204,6 +204,78 @@ test('avisos: una tabla vacía no se «rompe»', function () {
   igual(L.avisos(L.records([], INICIALES), L.records([p], INICIALES), p), []);
 });
 
+function ganaA20(ganador, perdedor, puntosPerdedor, entradasGanador, opciones) {
+  var entradas = [];
+  for (var i = 0; i < entradasGanador; i++) {
+    entradas.push({ jugador: ganador, carambolas: i === entradasGanador - 1 ? 20 - (entradasGanador - 1) : 1 });
+    if (i < entradasGanador - 1) {
+      entradas.push({ jugador: perdedor, carambolas: i === 0 ? puntosPerdedor : 0 });
+    }
+  }
+  return partido(ganador, perdedor, ganador, Object.assign({ entradas: entradas }, opciones || {}));
+}
+
+test('récord de perder con menos carambolas: gana el número más bajo y guarda el límite', function () {
+  var ps = [ganaA20('A', 'B', 5, 3), ganaA20('B', 'C', 2, 3), ganaA20('A', 'C', 2, 3), ganaA20('A', 'B', 9, 3)];
+  var t = L.records(ps, INICIALES)['rosario|ronda3'];
+  igual([t.menor.jugador, t.menor.valor, t.menor.limite], ['C', 2, 20], 'empate en 2: se queda el primero');
+  assert.strictEqual(t.negro.valor, 8, 'el récord negro de derrotas seguidas no cambia');
+
+  var cero = ganaA20('B', 'A', 0, 2);
+  var avisos = L.avisos(L.records(ps, INICIALES), L.records(ps.concat([cero]), INICIALES), cero);
+  var menor = avisos.filter(function (a) { return a.tipo === 'menor'; })[0];
+  igual([menor.jugador, menor.valor, menor.rompe, menor.limite], ['A', 0, true, 20], 'perder en cero rompe el récord');
+
+  var iguala = ganaA20('A', 'B', 2, 2);
+  avisos = L.avisos(L.records(ps, INICIALES), L.records(ps.concat([iguala]), INICIALES), iguala);
+  assert.ok(avisos.some(function (a) { return a.tipo === 'menor' && a.valor === 2 && !a.rompe; }), 'perder con 2 lo iguala');
+
+  var lejos = ganaA20('A', 'B', 15, 2);
+  avisos = L.avisos(L.records(ps, INICIALES), L.records(ps.concat([lejos]), INICIALES), lejos);
+  assert.ok(!avisos.some(function (a) { return a.tipo === 'menor'; }), 'perder con 15 no avisa');
+});
+
+test('récords en juego: la racha y el récord negro que el partido puede alcanzar', function () {
+  var previos = [];
+  for (var i = 0; i < 7; i++) { previos.push(partido('F', 'B', 'B', { entradas: [{ jugador: 'B', carambolas: 5 }] })); }
+  var lista = L.enJuego(L.records(previos, INICIALES), partido('F', 'B', null));
+  igual(lista.map(function (x) { return [x.tipo, x.jugador, x.valor, x.rompe]; }),
+    [['negro', 'F', 8, false], ['racha', 'B', 8, true]], 'F iguala el negro de 8 si pierde; B rompe la racha de 7 si gana');
+  igual(L.enJuego(L.records([], INICIALES), partido('A', 'C', null)), []);
+});
+
+test('cara a cara: quién le ganó a quién, por modalidad y formato', function () {
+  var ps = [partido('A', 'B', 'A'), partido('A', 'C', 'C'), partido('B', 'A', 'A'),
+    partido('A', 'B', 'B', { formato: 'dos' })];
+  var m = L.caraACara(ps, { modalidad: 'rosario', formato: 'ronda3' });
+  igual(m, { A: { B: 2, C: 0 }, B: { A: 0 }, C: { A: 1 } });
+});
+
+test('duelo: historial del par, últimos cinco, racha, victoria más rápida y derrota más cerrada', function () {
+  var ps = [
+    ganaA20('A', 'B', 5, 4),
+    ganaA20('B', 'A', 18, 6),
+    ganaA20('A', 'C', 3, 2),                         // otro par: no cuenta
+    ganaA20('A', 'B', 12, 3),
+    ganaA20('A', 'B', 7, 5, { modalidad: 'tresbandas' }), // otra modalidad
+    ganaA20('A', 'B', 19, 5)
+  ];
+  var d = L.duelo(ps, 'A', 'B', { modalidad: 'rosario', formato: 'ronda3' });
+  assert.strictEqual(d.jugados, 4);
+  igual([d.por.A.ganados, d.por.B.ganados], [3, 1]);
+  igual(d.ultimos, ['A', 'B', 'A', 'A']);
+  igual(d.racha, { jugador: 'A', valor: 2 });
+  assert.strictEqual(d.por.A.rapida.entradas, 3);
+  igual([d.por.A.cerrada.carambolas, d.por.A.cerrada.limite], [18, 20]);
+  assert.strictEqual(d.por.B.cerrada.carambolas, 19);
+  assert.strictEqual(d.por.B.rapida.entradas, 6);
+  assert.strictEqual(d.por.A.serie, 18, 'la última entrada de la victoria en 3, empatada con su derrota');
+  assert.strictEqual(d.por.A.promedio, 78 / 17);
+
+  var vacio = L.duelo([], 'A', 'B', { modalidad: 'rosario', formato: 'ronda3' });
+  igual([vacio.jugados, vacio.racha, vacio.por.A.rapida], [0, null, null]);
+});
+
 test('estadísticas: ganados en la semana y en total, promedio por entrada, filtro', function () {
   var lunes = new Date(2026, 8, 21, 20, 0).getTime();     // lunes 21 sep 2026
   var domingoAntes = new Date(2026, 8, 20, 20, 0).getTime();
