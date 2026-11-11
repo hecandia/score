@@ -9,8 +9,9 @@ Sólo estado. El porqué de las decisiones vive en el brain y en `docs/decisione
   la app Archivos. `npm test` 18/18, `npm run e2e` 82/82.
 - **Lo Swift nuevo sólo compiló** (copia `Carambola-respaldo.json` en Documentos, «Guardar en
   Archivos», «Restaurar desde un archivo»): nunca corrió en el simulador ni en el iPad.
-- Web publicada en https://hecandia.github.io/score/ sigue en manifest v5 (v4 del roadmap): la v5
-  **no está publicada**, el iPad 3 no la tiene.
+- El código de la v5 **ya está en GitHub Pages** (https://hecandia.github.io/score/), pero
+  `carambola.appcache` sigue en v5 (= v4 del roadmap): el iPad 3 conserva su caché y no la ve
+  hasta subir el appcache. Una pestaña sin caché sí ve la v5.
 - El historial vivo es el de la app nativa.
 
 ## Siguiente paso
@@ -26,8 +27,8 @@ Sólo estado. El porqué de las decisiones vive en el brain y en `docs/decisione
    perder lo anotado; con otra skin, la TV la sigue.
 3. Control remoto desde un teléfono real contra el mini 4 (sólo probado en el simulador): el +1
    tiene que quedar a la izquierda.
-4. Publicar la web (v5) para el iPad 3 cuando Héctor apruebe las skins: subir la versión de
-   `carambola.appcache` a v6.
+4. Llevar la v5 al iPad 3 cuando Héctor apruebe las skins: subir la versión de
+   `carambola.appcache` a v6 y empujar a `main` (empujar a `main` publica: ver CLAUDE.md).
 5. Pendiente de respuesta de Héctor: renombrar «Control desde el iPhone» a «Control desde el
    celular» (también sirve un Android). Y lo que está en ❓ del roadmap, de a una.
 
