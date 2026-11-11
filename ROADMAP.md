@@ -61,6 +61,17 @@ formato del partido, como los récords. Reglas en REQUISITOS §Cara a cara.
 | iPad con TV: botón «TV: …» en la barra que alterna automático · récords · cara a cara · marcador | ✔ hecho |
 | iPad sin TV (y el control del teléfono): la línea del cara a cara en «¿Quién sale?» | ✔ hecho; también en la web del iPad 3 al publicar |
 
+## v5 — teléfono, placa de la entrada, skins y respaldo en Archivos (2026-11-10; en el mini 4 como compilación 3, web sin publicar)
+
+Decisiones en [docs/decisiones/2026-11-10-telefono-placa-de-entrada-skins-y-respaldo.md](docs/decisiones/2026-11-10-telefono-placa-de-entrada-skins-y-respaldo.md).
+
+| Funcionalidad | Estado |
+|---|---|
+| Teléfono: +1 a la izquierda y −1 a la derecha | 🔎 instalado; falta con un teléfono real |
+| Placa «+N ENTRADA» al lado del número grande (TV e iPad sin TV) | 🔎 instalado; falta verla en la TV real |
+| Ajustes › Apariencia: Clásica, Grafito y Transmisión, en iPad, TV y teléfono | 🔎 instalado; Héctor comenta al verlas |
+| Respaldo en Archivos: copia al día en «En mi iPad › Carambola», «Guardar en Archivos», «Restaurar desde un archivo» | 🔎 instalado; lo Swift sólo compiló, primera prueba en el iPad |
+
 ## Siguiente
 
 | Tema | Estado | Qué lo destraba |

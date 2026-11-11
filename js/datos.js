@@ -9,6 +9,7 @@
 
   var CLAVE = 'carambola.v1';
   var CLAVE_DESHACER = 'carambola.v1.deshacer';
+  var CLAVE_AJUSTES = 'carambola.v1.ajustes';
   var MAX_DESHACER = 40;
   var contador = 0;
 
@@ -113,6 +114,20 @@
     escribir(CLAVE_DESHACER, pila);
     escribir(CLAVE, previo);
     return previo;
+  };
+
+  // Preferencias del aparato (la apariencia). Van en su propia clave, fuera del
+  // estado: si viajaran con él, un «Deshacer» de una entrada anterior al cambio
+  // las revertiría. Tampoco entran al respaldo, que es la historia de juego.
+  D.ajustes = function () {
+    var a = leer(CLAVE_AJUSTES);
+    return a && typeof a === 'object' ? a : {};
+  };
+
+  D.guardarAjuste = function (clave, valor) {
+    var a = D.ajustes();
+    a[clave] = valor;
+    escribir(CLAVE_AJUSTES, a);
   };
 
   D.exportar = function (estado) {

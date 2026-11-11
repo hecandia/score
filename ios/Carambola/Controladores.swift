@@ -1,4 +1,5 @@
 import UIKit
+import UniformTypeIdentifiers
 import WebKit
 
 private let verdeMesa = UIColor(red: 0x0b / 255, green: 0x3d / 255, blue: 0x2e / 255, alpha: 1)
@@ -42,7 +43,8 @@ private final class Manejador: NSObject, WKScriptMessageHandler {
 
 /// La app completa, la misma página que en Safari. Es la única que tiene el
 /// estado y la única que guarda.
-final class ControladorPrincipal: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate {
+final class ControladorPrincipal: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate,
+                                  UIDocumentPickerDelegate {
     private let almacen = Almacen()
     private var web: WKWebView!
     private var cargada = false
@@ -59,6 +61,7 @@ final class ControladorPrincipal: UIViewController, WKScriptMessageHandler, WKNa
         config.userContentController.add(manejador, name: "tablero")
         config.userContentController.add(manejador, name: "remoto")
         config.userContentController.add(manejador, name: "controlRemoto")
+        config.userContentController.add(manejador, name: "archivo")
         web = nuevaWeb(config)
         web.navigationDelegate = self
         web.uiDelegate = self
@@ -123,9 +126,67 @@ final class ControladorPrincipal: UIViewController, WKScriptMessageHandler, WKNa
             if let html = mensaje.body as? String { Puente.compartido.remoto(html) }
         case "controlRemoto":
             mostrarControlRemoto()
+        case "archivo":
+            if mensaje.body as? String == "guardar" { guardarEnArchivos() }
+            if mensaje.body as? String == "abrir" { abrirRespaldo() }
         default:
             break
         }
+    }
+
+    // MARK: Respaldo en Archivos
+
+    private var fechaDeHoy: String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
+
+    private func aviso(_ texto: String) {
+        let alerta = UIAlertController(title: nil, message: texto, preferredStyle: .alert)
+        alerta.addAction(UIAlertAction(title: "Aceptar", style: .default))
+        present(alerta, animated: true)
+    }
+
+    /// Abre el selector de iOS para guardar una copia con fecha donde se elija
+    /// (iCloud Drive incluido). Se exporta una copia temporal: el original no se mueve.
+    private func guardarEnArchivos() {
+        guard let texto = almacen.textoRespaldo else { aviso("Todavía no hay datos que respaldar."); return }
+        let temporal = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Carambola-respaldo-\(fechaDeHoy).json")
+        do {
+            try Data(texto.utf8).write(to: temporal, options: .atomic)
+        } catch {
+            aviso("No se pudo preparar el archivo del respaldo.")
+            return
+        }
+        let selector = UIDocumentPickerViewController(forExporting: [temporal], asCopy: true)
+        selector.delegate = self
+        present(selector, animated: true)
+    }
+
+    private var abriendo = false
+
+    /// Elige un respaldo guardado; la página pide confirmación antes de reemplazar.
+    private func abrirRespaldo() {
+        let selector = UIDocumentPickerViewController(forOpeningContentTypes: [.json, .plainText, .text], asCopy: true)
+        selector.delegate = self
+        abriendo = true
+        present(selector, animated: true)
+    }
+
+    func documentPicker(_ selector: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard abriendo else { aviso("Respaldo guardado."); return }
+        abriendo = false
+        guard let url = urls.first, let texto = try? String(contentsOf: url, encoding: .utf8) else {
+            aviso("No se pudo leer el archivo.")
+            return
+        }
+        web.evaluateJavaScript("Carambola.app.restaurarTexto(\(literalJS(texto)))")
+    }
+
+    func documentPickerWasCancelled(_ selector: UIDocumentPickerViewController) {
+        abriendo = false
     }
 
     // MARK: Navegación

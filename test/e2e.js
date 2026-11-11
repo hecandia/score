@@ -236,8 +236,10 @@ async function appNativa(navegador, url) {
     window.webkit = { messageHandlers: {
       tablero: { postMessage: function (h) { window.__tableros.push(h); } },
       remoto: { postMessage: function (h) { window.__remotos.push(h); } },
-      controlRemoto: { postMessage: function () {} }
+      controlRemoto: { postMessage: function () {} },
+      archivo: { postMessage: function (m) { window.__archivo.push(m); } }
     } };
+    window.__archivo = [];
   });
   function toca(texto) { return pagina.locator('button, a').filter({ hasText: texto }).first().click(); }
   function tableros() { return pagina.evaluate(function () { return window.__tableros.slice(); }); }
@@ -352,6 +354,117 @@ async function appNativa(navegador, url) {
   await toca('‹ Menú');
   comprobar(await pagina.locator('button', { hasText: 'Control desde el iPhone' }).count() === 1,
     'nativa: el menú ofrece el control desde el iPhone');
+
+  // El teléfono: se le pinta lo último que mandó el iPad, como haría control.js.
+  async function enTelefono(html, nombreCaptura) {
+    var tel = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    await tel.route('**/js/control.js', function (r) { return r.fulfill({ body: '', contentType: 'text/javascript' }); });
+    await tel.goto(url + 'control.html');
+    var medidas = await tel.evaluate(function (h) {
+      var piel = (/^<!--piel:(\w+)-->/.exec(h) || [])[1];
+      document.body.className = piel && piel !== 'clasica' ? 'piel-' + piel : '';
+      document.getElementById('app').innerHTML = h;
+      function x(sel) { return document.querySelector(sel).getBoundingClientRect().left; }
+      var placa = document.querySelector('.en-entrada');
+      return { mas: x('button.mas'), menos: x('button.menos'), clase: document.body.className,
+        placa: !!placa && getComputedStyle(placa).display !== 'none' };
+    }, html);
+    await tel.screenshot({ path: path.join(CAPTURAS, nombreCaptura + '.png') });
+    await tel.close();
+    return medidas;
+  }
+  var tel = await enTelefono((await remotos()).pop(), '13-telefono-control');
+  comprobar(tel.mas < tel.menos, 'teléfono: el +1 queda a la izquierda del −1, al alcance del pulgar izquierdo');
+  comprobar(!tel.placa, 'teléfono: la placa de la entrada no se muestra; ya está grande en el contador');
+
+  // La placa con lo de la entrada: en el marcador grande del iPad y en la TV, no en el compacto.
+  await toca('Continuar la noche');
+  async function placaVisible() {
+    return pagina.evaluate(function () {
+      var p = document.querySelector('.en-entrada');
+      return !!p && getComputedStyle(p).display !== 'none' ? p.innerText.replace(/\s+/g, ' ') : null;
+    });
+  }
+  comprobar(/^\+6 entrada$/i.test(await placaVisible()), 'sin TV, el marcador grande lleva la placa «+6 entrada»');
+  await pagina.evaluate(function () { Carambola.app.pantallaExterna(true); });
+  comprobar(await placaVisible() === null, 'con TV, el marcador compacto del iPad no lleva la placa');
+  var conPlaca = (await tableros()).pop();
+  comprobar(/class="en-entrada"><b>\+6</.test(conPlaca), 'la TV recibe la placa con lo de la entrada');
+  // El peor caso razonable: total de dos cifras y una entrada de dos cifras, en TV 16:9 y 4:3.
+  var peor = conPlaca.replace('puntos pendiente">6<', 'puntos pendiente">48<').replace('<b>+6<', '<b>+12<');
+  var tamanos = [[1280, 720], [1024, 768]];
+  for (var s = 0; s < tamanos.length; s++) {
+    var tvx = await navegador.newPage({ viewport: { width: tamanos[s][0], height: tamanos[s][1] }, deviceScaleFactor: 1 });
+    await tvx.goto(url + 'tv.html');
+    var cabe = await tvx.evaluate(function (h) {
+      mostrar(h);
+      var n = document.querySelector('.puntos.pendiente');
+      var rango = document.createRange();
+      rango.selectNodeContents(n);
+      var texto = rango.getBoundingClientRect();
+      var placa = document.querySelector('.en-entrada').getBoundingClientRect();
+      var panel = document.querySelector('.panel.activo').getBoundingClientRect();
+      return { textoFin: Math.round(texto.right), placaInicio: Math.round(placa.left),
+        placaFin: Math.round(placa.right), panelFin: Math.round(panel.right),
+        alto: document.documentElement.scrollHeight };
+    }, peor);
+    comprobar(cabe.textoFin <= cabe.placaInicio && cabe.placaFin <= cabe.panelFin && cabe.alto <= tamanos[s][1],
+      'TV ' + tamanos[s].join('×') + ': «48» y la placa «+12» caben lado a lado sin taparse: ' + JSON.stringify(cabe));
+    if (s === 0) { await tvx.screenshot({ path: path.join(CAPTURAS, '14-tv-placa-dos-cifras.png') }); }
+    await tvx.close();
+  }
+  await pagina.evaluate(function () { Carambola.app.pantallaExterna(false); });
+
+  // Apariencias: se eligen en Ajustes y llegan al iPad, a la TV y al teléfono.
+  var PIELES = ['grafito', 'transmision', 'clasica'];
+  for (var k = 0; k < PIELES.length; k++) {
+    var piel = PIELES[k];
+    await toca('‹ Menú');
+    await toca('Ajustes');
+    await pagina.locator('[data-accion="piel"][data-valor="' + piel + '"]').click();
+    if (k === 0) { await pagina.screenshot({ path: path.join(CAPTURAS, '11-ajustes.png') }); }
+    var clase = piel === 'clasica' ? '' : 'piel-' + piel;
+    comprobar(await pagina.evaluate(function () { return document.body.className; }) === clase &&
+      JSON.parse(await pagina.evaluate(function () {
+        return window.almacenNativo.getItem('carambola.v1.ajustes');
+      })).piel === piel,
+      piel + ': se aplica en el iPad y se guarda en el almacén de la app');
+    await toca('‹ Inicio');
+    await toca('Continuar la noche');
+    await pagina.setViewportSize({ width: 1024, height: 748 });
+    var fin = await pagina.evaluate(function () {
+      return Math.round(document.querySelector('.entrada').getBoundingClientRect().bottom);
+    });
+    comprobar(fin <= 748, piel + ': la pantalla del partido cabe en 748 px: termina en ' + fin);
+    await pagina.screenshot({ path: path.join(CAPTURAS, '12-' + piel + '-ipad.png') });
+    await pagina.setViewportSize({ width: 1024, height: 768 });
+    await pagina.evaluate(function () { Carambola.app.pantallaExterna(true); });
+    var tab = (await tableros()).pop();
+    comprobar(tab.indexOf('<!--piel:' + piel + '-->') === 0, piel + ': la apariencia viaja a la TV');
+    comprobar(await enTV(tab, '12-' + piel + '-tv') <= 720, piel + ': el tablero cabe en la TV');
+    await pagina.evaluate(function () { Carambola.app.pantallaExterna(false); });
+    var telPiel = await enTelefono((await remotos()).pop(), '12-' + piel + '-telefono');
+    comprobar(telPiel.clase === clase, piel + ': la apariencia viaja al teléfono');
+  }
+
+  // Respaldo en Archivos: botones que piden a la app el selector de iOS, y la
+  // restauración del texto de un archivo elegido.
+  await toca('‹ Menú');
+  await toca('Respaldo');
+  await toca('Guardar en Archivos');
+  comprobar((await pagina.evaluate(function () { return window.__archivo.slice(); })).join() === 'guardar' &&
+    await pagina.locator('button', { hasText: 'Restaurar desde un archivo' }).count() === 1,
+    'nativa: Respaldo ofrece guardar en Archivos y restaurar desde un archivo');
+  var texto = await pagina.inputValue('#exportar');
+  var dialogos = [];
+  pagina.on('dialog', function (d) { dialogos.push(d.message()); d.accept(); });
+  await pagina.evaluate(function () { Carambola.app.restaurarTexto('esto no es un respaldo'); });
+  comprobar(dialogos.join() === 'No es un respaldo válido.', 'un archivo que no es respaldo se rechaza sin preguntar');
+  dialogos.length = 0;
+  await pagina.evaluate(function (t) { Carambola.app.restaurarTexto(t); }, texto);
+  comprobar(/reemplaza todos los datos/.test(dialogos[0]) && dialogos[1] === 'Respaldo restaurado.' &&
+    await pagina.evaluate(function () { return JSON.stringify(Carambola.app.estado()); }) === texto,
+    'el archivo elegido se restaura tras confirmar, igual que el texto pegado');
 
   comprobar(erroresJs.length === 0, 'nativa: sin errores de JavaScript' + (erroresJs.length ? ': ' + erroresJs.join('; ') : ''));
   await pagina.close();

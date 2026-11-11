@@ -12,10 +12,14 @@ html, body { height: 100%; overflow: hidden; }
 .marcador { margin: 0 -1vw; }
 .panel { margin: 0 1vw; padding: 2vh 1vw; border-width: 0.6vh; border-radius: 3vh; }
 .panel .nombre { font-size: 8vh; line-height: 11vh; }
-.panel .puntos { font-size: 40vh; }
+/* El ancho también limita: en una TV 4:3 el número y la placa tienen que caber lado a lado. */
+.panel .puntos { font-size: 40vh; font-size: min(40vh, 22vw); }
 .panel .estado { height: 13vh; margin-top: 1vh; }
 .panel .detalle { font-size: 3.6vh; height: auto; }
 .por-confirmar { font-size: 4.5vh; }
+.en-entrada { margin-left: 1.5vw; padding: 1.6vh 2.2vh 2vh; border-radius: 2.4vh; }
+.en-entrada b { font-size: 12vh; }
+.en-entrada span { font-size: 2.8vh; letter-spacing: 0.3vh; margin-top: 0.4vh; }
 .tira { font-size: 4vh; padding: 0.8vh 1.6vh; border-radius: 1vh; margin-left: 2vh; }
 .bola { width: 7vh; height: 7vh; margin-right: 2vh; }
 .rosario { font-size: 4vh; padding: 1.5vh; border-radius: 2vh; }

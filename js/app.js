@@ -16,13 +16,26 @@
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
     'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
+  // Apariencias. La clase `piel-<clave>` va en el <body> del iPad, de la TV y
+  // del teléfono; la clásica no lleva clase. Los colores de cada una sólo
+  // sirven para dibujar su muestra en Ajustes: los de verdad están en app.css.
+  var PIELES = ['clasica', 'grafito', 'transmision'];
+  var PIEL = {
+    clasica: { nombre: 'Clásica', texto: 'El paño verde de siempre.',
+      fondo: '#0b3d2e', panel: 'rgba(0,0,0,.25)', numero: '#f4f1e8', acento: '#7fd4ff', boton: '#f2c14e' },
+    grafito: { nombre: 'Grafito', texto: 'Oscuro y plano, con un acento verde.',
+      fondo: '#111317', panel: '#181b20', numero: '#eef1f4', acento: '#34d399', boton: '#34d399' },
+    transmision: { nombre: 'Transmisión', texto: 'Como el marcador de un partido en la tele.',
+      fondo: '#0d2250', panel: '#0f2552', numero: '#ffffff', acento: '#ff7a1a', boton: '#ff7a1a' }
+  };
+
   var estado = D.cargar();
   // `tecleando`: el siguiente dígito del teclado se agrega en vez de reemplazar.
   // `conTV`: la app nativa avisa si hay una pantalla externa; en Safari nunca la hay.
   // `remotos`: cuántos iPhones están conectados como control remoto.
   // `tv`: qué muestra la TV (ver MODOS_TV).
   var ui = { vista: 'inicio', borrador: null, filtro: { modalidad: 'rosario', formato: 'ronda3' }, tecleando: false,
-    conTV: false, remotos: 0, tv: 'auto' };
+    conTV: false, remotos: 0, tv: 'auto', piel: PIEL[D.ajustes().piel] ? D.ajustes().piel : 'clasica' };
 
   // Canal hacia la app nativa del iPad mini; no existe en Safari.
   function nativo(canal) {
@@ -164,6 +177,7 @@
       boton('ir', 'Estadísticas', { valor: 'estadisticas', clase: 'grande' }) +
       boton('ir', 'Jugadores', { valor: 'jugadores' }) +
       boton('ir', 'Respaldo', { valor: 'respaldo' }) +
+      boton('ir', 'Ajustes', { valor: 'ajustes' }) +
       (nativo('controlRemoto') ? boton('controlRemoto', 'Control desde el iPhone') : '') +
       '</div>';
     return html;
@@ -252,7 +266,13 @@
   }
 
   // Mientras se anota, el número grande del tirador ya incluye lo de la
-  // entrada, marcado como pendiente hasta que confirme.
+  // entrada, marcado como pendiente hasta que confirme. Lo de la entrada va
+  // además en una placa propia en la esquina, para leerse desde la mesa: en
+  // texto («+4 por confirmar») había que acercarse a la TV para verlo.
+  function placaEntrada(acumulado) {
+    return '<div class="en-entrada"><b>+' + acumulado + '</b><span>entrada</span></div>';
+  }
+
   function panel(p, j, tirador, acumulado) {
     var activo = j === tirador;
     var pendiente = activo && acumulado > 0;
@@ -262,7 +282,8 @@
     return '<div class="panel' + (activo ? ' activo' : '') + '">' +
       '<div class="nombre">' + (color ? bola(color) : '') + nombre(j) +
       (activo ? '<span class="tira">TIRA</span>' : '') + '</div>' +
-      '<div class="puntos' + (pendiente ? ' pendiente' : '') + '">' + (puntos + (pendiente ? acumulado : 0)) + '</div>' +
+      '<div class="cifra"><div class="puntos' + (pendiente ? ' pendiente' : '') + '">' +
+      (puntos + (pendiente ? acumulado : 0)) + '</div>' + (pendiente ? placaEntrada(acumulado) : '') + '</div>' +
       '<div class="estado">' + (activo ? avisoRosario(p, j, acumulado) : '') + '</div>' +
       '<div class="detalle">' + (pendiente
         ? '<span class="por-confirmar">+' + acumulado + ' por confirmar</span>'
@@ -609,9 +630,22 @@
       boton('agregarJugador', 'Agregar') + '</div>';
   };
 
+  // En la app nativa el respaldo también es un archivo: siempre hay una copia
+  // al día en Archivos › En mi iPad › Carambola, y estos botones guardan o
+  // abren una copia donde se elija, iCloud Drive incluido.
+  function respaldoEnArchivos() {
+    if (!nativo('archivo')) { return ''; }
+    return '<div class="tarjeta"><h2>En Archivos</h2>' +
+      '<p class="ayuda">En la app Archivos, en «En mi iPad › Carambola», siempre hay una copia al día ' +
+      '(Carambola-respaldo.json). Para respaldar, cópiala a iCloud Drive.</p>' +
+      '<div class="opciones">' + boton('guardarArchivo', 'Guardar en Archivos', { clase: 'primario' }) +
+      boton('abrirArchivo', 'Restaurar desde un archivo') + '</div></div>';
+  }
+
   vistas.respaldo = function () {
     var datos = D.exportar(estado);
     return '<div class="barra">' + boton('ir', '‹ Inicio', { valor: 'inicio' }) + '<h1>Respaldo</h1></div>' +
+      respaldoEnArchivos() +
       '<p class="ayuda">Los datos viven sólo en este iPad. Envíate una copia de vez en cuando: ' +
       'si se borran los datos de Safari, con ella se recupera todo.</p>' +
       '<a class="boton grande primario" href="mailto:?subject=' + encodeURIComponent('Respaldo carambola ' + fechaLarga(Date.now())) +
@@ -624,6 +658,29 @@
       '<p class="ayuda">Pega el texto completo de un respaldo. Reemplaza todo lo que hay en el iPad.</p>' +
       '<textarea id="importar" rows="6"></textarea>' +
       boton('importar', 'Restaurar', { clase: 'grande' });
+  };
+
+  // Una muestra en miniatura del marcador, pintada con los colores de la piel.
+  function muestraPiel(x) {
+    function cuadro(color, activo) {
+      return '<i style="background:' + x.panel + ';color:' + color +
+        (activo ? ';box-shadow:inset 0 0 0 3px ' + x.acento : '') + '">' + (activo ? '7' : '4') + '</i>';
+    }
+    return '<span class="muestra" style="background:' + x.fondo + '"><span class="fila">' +
+      cuadro(x.acento, true) + cuadro(x.numero, false) + '</span>' +
+      '<em style="background:' + x.boton + '"></em></span>';
+  }
+
+  vistas.ajustes = function () {
+    return '<div class="barra">' + boton('ir', '‹ Inicio', { valor: 'inicio' }) + '<h1>Ajustes</h1></div>' +
+      '<h2>Apariencia</h2>' +
+      '<p class="ayuda">Cambia los colores del iPad, de la TV y del control desde el celular. ' +
+      'Se guarda en este iPad; los partidos no cambian.</p>' +
+      '<div class="pieles">' + PIELES.map(function (k) {
+        var x = PIEL[k];
+        return boton('piel', muestraPiel(x) + '<b>' + x.nombre + '</b><small>' + x.texto + '</small>',
+          { valor: k, clase: 'piel-opcion' + (ui.piel === k ? ' elegida' : '') });
+      }).join('') + '</div>';
   };
 
   // --- Acciones ----------------------------------------------------------------
@@ -804,6 +861,12 @@
     return false;
   };
 
+  acciones.piel = function (valor) {
+    if (!PIEL[valor]) { return; }
+    ui.piel = valor;
+    try { D.guardarAjuste('piel', valor); } catch (e) { /* sin guardar sigue valiendo esta sesión */ }
+  };
+
   acciones.filtroModalidad = function (valor) { ui.filtro.modalidad = valor; };
   acciones.filtroFormato = function (valor) { ui.filtro.formato = valor; };
 
@@ -832,25 +895,41 @@
     return false;
   };
 
-  acciones.importar = function () {
-    var texto = doc.getElementById('importar').value;
+  // Lo usan el campo de texto y el archivo que se elige en la app nativa.
+  function restaurar(texto) {
     if (!texto) { return; }
+    if (!D.valido((function () { try { return JSON.parse(texto); } catch (e) { return null; } })())) {
+      raiz.alert('No es un respaldo válido.');
+      return;
+    }
     if (!raiz.confirm('Esto reemplaza todos los datos del iPad por los del respaldo. ¿Continuar?')) { return; }
     var nuevo = D.importar(texto);
-    if (!nuevo) { raiz.alert('El texto no es un respaldo válido.'); return; }
+    if (!nuevo) { raiz.alert('No es un respaldo válido.'); return; }
     estado = nuevo;
     raiz.alert('Respaldo restaurado.');
     ui.vista = 'inicio';
-  };
+  }
+
+  acciones.importar = function () { restaurar(doc.getElementById('importar').value); };
+
+  acciones.guardarArchivo = function () { nativo('archivo').postMessage('guardar'); return false; };
+  acciones.abrirArchivo = function () { nativo('archivo').postMessage('abrir'); return false; };
 
   // --- Arranque ----------------------------------------------------------------
 
+  function clasePiel() { return ui.piel === 'clasica' ? '' : 'piel-' + ui.piel; }
+
+  // La TV y el teléfono sólo reciben HTML: la apariencia viaja en un comentario
+  // al principio, y cada uno la pone en su <body> (tv.html, js/control.js).
+  function conPiel(html) { return '<!--piel:' + ui.piel + '-->' + html; }
+
   function dibujar() {
+    doc.body.className = [clasePiel(), ui.conTV ? 'con-tv' : ''].filter(Boolean).join(' ');
     doc.getElementById('app').innerHTML = vistas[ui.vista]();
     var tv = nativo('tablero');
-    if (tv && ui.conTV) { tv.postMessage(tablero()); }
+    if (tv && ui.conTV) { tv.postMessage(conPiel(tablero())); }
     var control = nativo('remoto');
-    if (control && ui.remotos > 0) { control.postMessage(remoto()); }
+    if (control && ui.remotos > 0) { control.postMessage(conPiel(remoto())); }
   }
 
   function destinoAccion(nodo) {
@@ -889,12 +968,16 @@
     // entrada: con TV el marcador grande va allá y el iPad se queda con los controles.
     pantallaExterna: function (hay) {
       ui.conTV = !!hay;
-      doc.body.className = ui.conTV ? 'con-tv' : '';
       dibujar();
     },
     // La app nativa avisa cuántos iPhones hay conectados; con cero no se les manda nada.
     remotos: function (n) {
       ui.remotos = n;
+      dibujar();
+    },
+    // La app nativa entrega el texto del archivo de respaldo que se eligió.
+    restaurarTexto: function (texto) {
+      restaurar(texto);
       dibujar();
     },
     // Un toque en el iPhone. Corre la misma acción que el botón del iPad.

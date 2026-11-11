@@ -61,6 +61,15 @@ textarea { width: 100%; font-size: 14px; margin: 8px 0; }
 .panel .nombre { font-size: 36px; font-weight: 600; line-height: 44px; }
 .panel .puntos { font-size: 160px; line-height: 1; font-weight: 700; border-radius: 14px; }
 .panel .puntos.pendiente { color: #7fd4ff; background: rgba(127,212,255,.14); }
+/* Placa con lo de la entrada en curso, al lado del número grande y sin taparlo. */
+.cifra { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.cifra .puntos { -webkit-flex: 1; flex: 1; }
+.en-entrada {
+  -webkit-flex: none; flex: none; margin-left: 10px; padding: 6px 14px 8px; border-radius: 14px;
+  background: #7fd4ff; color: #062a3a; text-align: center; line-height: 1;
+}
+.en-entrada b { display: block; font-size: 52px; font-weight: 800; }
+.en-entrada span { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 .panel .estado { height: 70px; }
 .panel .detalle { font-size: 17px; color: #b9d3c3; height: 24px; }
 .por-confirmar { color: #7fd4ff; font-weight: 700; font-size: 20px; }
@@ -111,6 +120,7 @@ textarea { width: 100%; font-size: 14px; margin: 8px 0; }
 .con-tv .panel .estado { height: auto; }
 .con-tv .rosario.tres { font-size: 26px; }
 .con-tv .bola { width: 28px; height: 28px; }
+.con-tv .en-entrada { display: none; }
 
 /* Récords y estadísticas */
 .rejilla { display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: 0 -6px; }
@@ -147,3 +157,102 @@ li { margin: 4px 0; }
   display: none; position: fixed; left: 0; right: 0; bottom: 0; padding: 16px; text-align: center;
   background: #f2c14e; color: #2b2100; font-weight: 600;
 }
+
+/* Ajustes: una tarjeta por apariencia, con una muestra del marcador. */
+.pieles { display: -webkit-flex; display: flex; margin: 0 -6px; }
+.pieles .piel-opcion {
+  -webkit-flex: 1; flex: 1; margin: 6px; padding: 10px; text-align: left;
+  background: transparent; color: inherit; border: 3px solid rgba(255,255,255,.18);
+}
+.pieles .piel-opcion.elegida { border-color: #f2c14e; }
+.pieles b { display: block; font-size: 20px; margin: 10px 4px 2px; }
+.pieles small { display: block; font-size: 15px; margin: 0 4px 4px; opacity: .75; }
+.muestra { display: block; border-radius: 10px; padding: 10px; }
+.muestra .fila { display: -webkit-flex; display: flex; }
+.muestra i {
+  -webkit-flex: 1; flex: 1; display: block; margin: 3px; padding: 6px 0; border-radius: 8px;
+  font-style: normal; font-size: 40px; font-weight: 800; text-align: center; line-height: 1;
+}
+.muestra em { display: block; margin: 6px 3px 0; height: 18px; border-radius: 6px; }
+
+/* --- Apariencias ---------------------------------------------------------------
+   La clase va en el <body> del iPad, de la TV y del teléfono. Sólo cambian
+   colores y letra: los tamaños siguen siendo los de cada pantalla. Sin
+   variables CSS (Safari 9), así que cada apariencia repite sus colores. */
+
+/* Grafito: oscuro neutro, superficies planas y un solo acento verde. */
+.piel-grafito { background: #111317; color: #eef1f4; }
+.piel-grafito h2 { color: #8b95a1; text-transform: uppercase; letter-spacing: 1px; font-size: 16px; }
+.piel-grafito .ayuda, .piel-grafito .descansa, .piel-grafito .quien, .piel-grafito th,
+.piel-grafito .panel .detalle, .piel-grafito .duelo-sub, .piel-grafito .tv-titulo,
+.piel-grafito .tv-salida span, .piel-grafito .tv-franja, .piel-grafito .tv-espera { color: #8b95a1; }
+.piel-grafito .quien b { color: #eef1f4; }
+.piel-grafito button, .piel-grafito .boton { background: #23272e; color: #eef1f4; }
+.piel-grafito .primario, .piel-grafito .contador .mas { background: #34d399; color: #052e1f; }
+.piel-grafito .secundario, .piel-grafito .barra button, .piel-grafito .opcion {
+  background: transparent; color: #eef1f4; border-color: #2f353d;
+}
+.piel-grafito .opcion.elegida { background: #eef1f4; color: #111317; border-color: #eef1f4; }
+.piel-grafito .tarjeta, .piel-grafito .entrada { background: #181b20; border: 1px solid #23272e; }
+.piel-grafito .panel { background: #181b20; }
+.piel-grafito .panel.activo { border-color: #34d399; background: #15211d; }
+.piel-grafito .panel .puntos { letter-spacing: -2px; font-weight: 800; }
+.piel-grafito .panel .puntos.pendiente, .piel-grafito .por-confirmar { color: #34d399; }
+.piel-grafito .panel .puntos.pendiente { background: rgba(52,211,153,.10); }
+.piel-grafito .tira, .piel-grafito .en-entrada { background: #34d399; color: #052e1f; }
+.piel-grafito .rosario { background: rgba(255,255,255,.06); }
+.piel-grafito .rosario.tres { background: #ef4444; }
+.piel-grafito .ganador, .piel-grafito .duelo-cabeza b { color: #34d399; }
+.piel-grafito .aviso.racha, .piel-grafito .aviso.tiro { background: #fbbf24; color: #1f1500; }
+.piel-grafito .aviso.negro, .piel-grafito .aviso.menor { background: #000; border-color: #333; }
+.piel-grafito td, .piel-grafito th { border-bottom-color: #23272e; }
+.piel-grafito .cara td.vacia { color: #3a414a; }
+.piel-grafito .punto { border-color: #8b95a1; }
+.piel-grafito .punto.gano { background: #34d399; border-color: #34d399; }
+.piel-grafito .pieles .piel-opcion.elegida { border-color: #34d399; }
+
+/* Transmisión: como el marcador de una transmisión deportiva. Azul marino,
+   nombres en barra y en mayúsculas, letra condensada y acento naranja. */
+.piel-transmision {
+  /* Sin repetir: bajo el contenido sigue el color del final del degradado. */
+  background: #060f24 no-repeat; background-image: -webkit-linear-gradient(top, #0d2250, #060f24);
+  background-image: linear-gradient(to bottom, #0d2250, #060f24); color: #fff;
+}
+.piel-transmision .panel .nombre, .piel-transmision .panel .puntos, .piel-transmision .acumulado,
+.piel-transmision .ganador, .piel-transmision .duelo-cabeza, .piel-transmision .en-entrada b,
+.piel-transmision .tv-salida, .piel-transmision h1 {
+  font-family: "Avenir Next Condensed", "Arial Narrow", -apple-system, sans-serif;
+}
+.piel-transmision h2 { color: #9fb3d9; text-transform: uppercase; letter-spacing: 1px; }
+.piel-transmision .ayuda, .piel-transmision .descansa, .piel-transmision .quien, .piel-transmision th,
+.piel-transmision .panel .detalle, .piel-transmision .duelo-sub, .piel-transmision .tv-titulo,
+.piel-transmision .tv-salida span, .piel-transmision .tv-franja, .piel-transmision .tv-espera { color: #9fb3d9; }
+.piel-transmision .quien b { color: #fff; }
+.piel-transmision button, .piel-transmision .boton { background: #e8eefc; color: #0b1a3a; }
+.piel-transmision .primario, .piel-transmision .contador .mas { background: #ff7a1a; color: #fff; }
+.piel-transmision .secundario, .piel-transmision .barra button, .piel-transmision .opcion {
+  background: transparent; color: #fff; border-color: #34528f;
+}
+.piel-transmision .opcion.elegida { background: #fff; color: #0b1a3a; border-color: #fff; }
+.piel-transmision .tarjeta, .piel-transmision .entrada { background: rgba(255,255,255,.05); }
+.piel-transmision .panel { background: #0f2552; border-radius: 10px; }
+.piel-transmision .panel .nombre {
+  background: #1d3f86; border-radius: 6px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700;
+}
+.piel-transmision .panel.activo { border-color: #ff7a1a; background: #13295a; }
+.piel-transmision .panel.activo .nombre { background: #ff7a1a; }
+.piel-transmision .panel .puntos { font-weight: 700; }
+.piel-transmision .panel .puntos.pendiente, .piel-transmision .por-confirmar { color: #ffb347; }
+.piel-transmision .panel .puntos.pendiente { background: #1a3166; }
+.piel-transmision .tira { background: #fff; color: #0b1a3a; }
+.piel-transmision .en-entrada { background: #ff7a1a; color: #fff; }
+.piel-transmision .rosario { background: rgba(255,255,255,.08); }
+.piel-transmision .rosario.tres { background: #e11d48; }
+.piel-transmision .ganador, .piel-transmision .duelo-cabeza b { color: #ffb347; }
+.piel-transmision .aviso.racha, .piel-transmision .aviso.tiro { background: #ffb347; color: #2a1400; }
+.piel-transmision .aviso.negro, .piel-transmision .aviso.menor { background: #030812; border-color: #34528f; }
+.piel-transmision td, .piel-transmision th { border-bottom-color: rgba(159,179,217,.2); }
+.piel-transmision .cara td.vacia { color: #34528f; }
+.piel-transmision .punto { border-color: #9fb3d9; }
+.piel-transmision .punto.gano { background: #ff7a1a; border-color: #ff7a1a; }
+.piel-transmision .pieles .piel-opcion.elegida { border-color: #ff7a1a; }

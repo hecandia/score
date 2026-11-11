@@ -22,6 +22,9 @@
     ws.onopen = function () { ws.send(JSON.stringify({ codigo: codigo })); };
     ws.onmessage = function (ev) {
       aviso('');
+      // La apariencia del iPad viaja al principio: <!--piel:grafito-->.
+      var piel = (/^<!--piel:(\w+)-->/.exec(ev.data) || [])[1];
+      doc.body.className = piel && piel !== 'clasica' ? 'piel-' + piel : '';
       doc.getElementById('app').innerHTML = ev.data;
     };
     ws.onclose = function () {
